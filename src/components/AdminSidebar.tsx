@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, FolderTree, Package, Scale, Bell, Settings2,
+  LayoutDashboard, FolderTree, Package, Settings2,
   Upload, Star, Eye, Image, Megaphone, ImageIcon, Mail,
   HelpCircle, FileText, Shield, Cookie, ChevronLeft, ChevronRight,
 } from "lucide-react";
@@ -11,8 +11,6 @@ const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Category Management", icon: FolderTree, path: "/admin/categories" },
   { label: "Product Management", icon: Package, path: "/admin/products" },
-  { label: "Product Rules", icon: Scale, path: "/admin/product-rules" },
-  { label: "Product Alerts", icon: Bell, path: "/admin/product-alerts" },
   { label: "Program Configuration", icon: Settings2, path: "/admin/programs" },
   { label: "Bulk Upload", icon: Upload, path: "/admin/bulk-upload" },
   { label: "Popular Products", icon: Star, path: "/admin/popular-products" },

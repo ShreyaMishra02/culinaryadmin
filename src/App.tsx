@@ -15,6 +15,8 @@ import PrivacyPolicyPage from "./pages/admin/PrivacyPolicyPage";
 import CookiePolicyPage from "./pages/admin/CookiePolicyPage";
 import EmailConfigPage from "./pages/admin/EmailConfigPage";
 import PlaceholderPage from "./pages/admin/PlaceholderPage";
+import ProgramConfigPage from "./pages/admin/ProgramConfigPage";
+import BackgroundImagesPage from "./pages/admin/BackgroundImagesPage";
 import BulkUploadPage from "./pages/admin/BulkUploadPage";
 import PopularProductsPage from "./pages/admin/PopularProductsPage";
 import ShowcaseProductsPage from "./pages/admin/ShowcaseProductsPage";
@@ -39,15 +41,13 @@ const AppRoutes = () => {
         <Route index element={<DashboardPage />} />
         <Route path="categories" element={<CategoryManagementPage />} />
         <Route path="products" element={<ProductManagementPage />} />
-        <Route path="product-rules" element={<PlaceholderPage title="Product Rules" subtitle="Manage product restriction and compliance rules" />} />
-        <Route path="product-alerts" element={<PlaceholderPage title="Product Alerts" subtitle="Configure product alert notifications" />} />
-        <Route path="programs" element={<PlaceholderPage title="Program Configuration" subtitle="Manage program settings and visibility" />} />
+        <Route path="programs" element={<ProgramConfigPage />} />
         <Route path="bulk-upload" element={<BulkUploadPage />} />
         <Route path="popular-products" element={<PopularProductsPage />} />
         <Route path="showcase-products" element={<ShowcaseProductsPage />} />
         <Route path="product-banners" element={<ProductBannerPage />} />
         <Route path="promo-banners" element={<PromoBannerPage />} />
-        <Route path="background-images" element={<PlaceholderPage title="Background Images" subtitle="Manage site background imagery" />} />
+        <Route path="background-images" element={<BackgroundImagesPage />} />
         <Route path="email-config" element={<EmailConfigPage />} />
         <Route path="help-center" element={<HelpCenterPage />} />
         <Route path="terms" element={<TermsPage />} />
