@@ -1,34 +1,46 @@
 import { useState } from "react";
-import { Search, RotateCcw, Pencil, Plus } from "lucide-react";
+import { Search, RotateCcw, Pencil, Plus, ArrowLeft } from "lucide-react";
 
-const mockCategories = [
-  { id: 1, name: "Electronics", code: "ELEC", active: true, region: "USA, EMEA", modifiedDate: "2026-02-20", modifiedBy: "admin@ontra.com" },
-  { id: 2, name: "Gift Cards", code: "GIFT", active: true, region: "All", modifiedDate: "2026-02-19", modifiedBy: "manager@ontra.com" },
-  { id: 3, name: "Travel & Experiences", code: "TRVL", active: false, region: "USA, Canada", modifiedDate: "2026-02-18", modifiedBy: "admin@ontra.com" },
-  { id: 4, name: "Home & Living", code: "HOME", active: true, region: "All", modifiedDate: "2026-02-17", modifiedBy: "manager@ontra.com" },
-  { id: 5, name: "Fashion & Apparel", code: "FASH", active: true, region: "EMEA, APAC", modifiedDate: "2026-02-16", modifiedBy: "admin@ontra.com" },
-  { id: 6, name: "Health & Wellness", code: "HLTH", active: true, region: "USA", modifiedDate: "2026-02-15", modifiedBy: "support@ontra.com" },
+const mainCategories = [
+  { id: 1, name: "Beverages", code: "BEV", active: true, region: "USA, EMEA", subcategories: ["Alcohol", "Coffee & Tea", "Mocktails", "Soda", "Smoothies"] },
+  { id: 2, name: "Restaurants", code: "REST", active: true, region: "All", subcategories: ["Restaurants", "Chain Restaurants", "Fast Food", "Restaurant Experiences"] },
+  { id: 3, name: "Order In", code: "ORDR", active: true, region: "USA, Canada", subcategories: ["Food Delivery"] },
+  { id: 4, name: "Meal Kits", code: "MEAL", active: true, region: "All", subcategories: ["Premium Items", "Meal Kit"] },
+  { id: 5, name: "Goodies", code: "GOOD", active: true, region: "EMEA, APAC", subcategories: ["Snacks", "Treats", "Edible Gifts"] },
+  { id: 6, name: "Grocery", code: "GROC", active: false, region: "USA", subcategories: [] },
 ];
+
+const allRegions = ["All", "USA", "Canada", "EMEA", "India", "APAC", "Latin America", "China", "Oceania"];
+const programs = ["Program Alpha", "Program Beta", "Program Gamma", "Program Delta", "Program Epsilon"];
 
 const CategoryManagementPage = () => {
   const [search, setSearch] = useState("");
-  const [region, setRegion] = useState("");
-  const [status, setStatus] = useState("");
-  const [categories, setCategories] = useState(mockCategories);
+  const [regionFilter, setRegionFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categories, setCategories] = useState(mainCategories);
   const [editingId, setEditingId] = useState<number | null>(null);
-
-  const filtered = categories.filter((c) => {
-    if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.code.toLowerCase().includes(search.toLowerCase())) return false;
-    if (region && !c.region.includes(region)) return false;
-    if (status === "active" && !c.active) return false;
-    if (status === "inactive" && c.active) return false;
-    return true;
-  });
 
   if (editingId !== null) {
     const cat = categories.find((c) => c.id === editingId);
-    return <CategoryEditForm category={cat} onBack={() => setEditingId(null)} />;
+    return (
+      <CategoryEditForm
+        category={cat}
+        onBack={() => setEditingId(null)}
+        onSave={(updated) => {
+          setCategories(categories.map(c => c.id === updated.id ? updated : c));
+          setEditingId(null);
+        }}
+      />
+    );
   }
+
+  const filtered = categories.filter((c) => {
+    if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.code.toLowerCase().includes(search.toLowerCase())) return false;
+    if (regionFilter && !c.region.includes(regionFilter)) return false;
+    if (statusFilter === "active" && !c.active) return false;
+    if (statusFilter === "inactive" && c.active) return false;
+    return true;
+  });
 
   return (
     <div className="animate-fade-in">
@@ -37,7 +49,7 @@ const CategoryManagementPage = () => {
           <h1 className="page-title">Category Management</h1>
           <p className="page-subtitle">Control visibility and structure of marketplace categories</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+        <button disabled className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium opacity-50 cursor-not-allowed">
           <Plus size={16} /> New Category
         </button>
       </div>
@@ -46,17 +58,18 @@ const CategoryManagementPage = () => {
       <div className="filter-section">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Category Name / Code" className="px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
-          <select value={region} onChange={(e) => setRegion(e.target.value)} className="px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30">
+          <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30">
             <option value="">All Regions</option>
-            <option>USA</option><option>Canada</option><option>EMEA</option><option>APAC</option><option>India</option>
+            {allRegions.filter(r => r !== "All").map(r => <option key={r}>{r}</option>)}
           </select>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30">
             <option value="">All Status</option>
-            <option value="active">Active</option><option value="inactive">Inactive</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
           <div className="flex gap-2">
             <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"><Search size={14} /> Search</button>
-            <button onClick={() => { setSearch(""); setRegion(""); setStatus(""); }} className="flex items-center justify-center gap-1.5 px-3 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted"><RotateCcw size={14} /> Reset</button>
+            <button onClick={() => { setSearch(""); setRegionFilter(""); setStatusFilter(""); }} className="flex items-center justify-center gap-1.5 px-3 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted"><RotateCcw size={14} /></button>
           </div>
         </div>
       </div>
@@ -67,7 +80,7 @@ const CategoryManagementPage = () => {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Category Name</th><th>Code</th><th>Active</th><th>Region</th><th>Modified</th><th>Modified By</th><th>Action</th>
+                <th>Category Name</th><th>Code</th><th>Active</th><th>Region</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -84,8 +97,6 @@ const CategoryManagementPage = () => {
                     </button>
                   </td>
                   <td className="text-muted-foreground">{c.region}</td>
-                  <td className="text-muted-foreground text-xs">{c.modifiedDate}</td>
-                  <td className="text-muted-foreground text-xs">{c.modifiedBy}</td>
                   <td>
                     <button onClick={() => setEditingId(c.id)} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-primary hover:bg-accent transition-colors">
                       <Pencil size={13} /> Edit
@@ -101,71 +112,135 @@ const CategoryManagementPage = () => {
   );
 };
 
-const regions = ["USA", "Canada", "EMEA", "India", "APAC", "Latin America", "China", "Oceania"];
+/* ─── Edit Form ─── */
+interface CategoryData {
+  id: number;
+  name: string;
+  code: string;
+  active: boolean;
+  region: string;
+  subcategories: string[];
+}
 
-const CategoryEditForm = ({ category, onBack }: { category?: any; onBack: () => void }) => {
-  const [name, setName] = useState(category?.name || "");
-  const [code, setCode] = useState(category?.code || "");
-  const [description, setDescription] = useState("");
+const CategoryEditForm = ({ category, onBack, onSave }: { category?: CategoryData; onBack: () => void; onSave: (c: CategoryData) => void }) => {
   const [active, setActive] = useState(category?.active ?? true);
   const [showInNav, setShowInNav] = useState(true);
   const [defaultExpanded, setDefaultExpanded] = useState(false);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(
+    category?.region === "All" ? allRegions.filter(r => r !== "All") : (category?.region.split(", ") || ["USA"])
+  );
   const [programVisibility, setProgramVisibility] = useState("all");
-  const [selectedRegions, setSelectedRegions] = useState<string[]>(["USA"]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
+  const [excludedPrograms, setExcludedPrograms] = useState<string[]>([]);
 
   const toggleRegion = (r: string) => {
-    if (r === "All") { setSelectedRegions(regions); return; }
-    setSelectedRegions((prev) => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
+    if (r === "All") {
+      setSelectedRegions(prev => prev.length === allRegions.length - 1 ? [] : allRegions.filter(x => x !== "All"));
+      return;
+    }
+    setSelectedRegions(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
+  };
+
+  const toggleProgram = (p: string, list: string[], setter: (v: string[]) => void) => {
+    setter(list.includes(p) ? list.filter(x => x !== p) : [...list, p]);
   };
 
   return (
     <div className="animate-fade-in">
       <div className="page-header">
-        <h1 className="page-title">{category ? "Edit Category" : "New Category"}</h1>
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-primary hover:underline mb-2">
+          <ArrowLeft size={15} /> Back to Categories
+        </button>
+        <h1 className="page-title">Edit Category: {category?.name}</h1>
         <p className="page-subtitle">Configure category details and visibility settings</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Basic Info */}
-        <div className="admin-card">
-          <h3 className="font-heading font-semibold text-foreground mb-4">Basic Information</h3>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Category Name *</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Category Code *</label>
-              <input value={code} onChange={(e) => setCode(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Description</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none" />
-            </div>
-            <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={active} onChange={() => setActive(!active)} className="accent-primary" /> Active</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showInNav} onChange={() => setShowInNav(!showInNav)} className="accent-primary" /> Show in Navigation</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={defaultExpanded} onChange={() => setDefaultExpanded(!defaultExpanded)} className="accent-primary" /> Default Expanded</label>
-            </div>
+      {/* Basic Section */}
+      <div className="admin-card mb-4">
+        <h3 className="font-heading font-semibold text-foreground mb-4">Basic Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Category Name <span className="text-xs text-muted-foreground">(Read-only)</span></label>
+            <input value={category?.name || ""} readOnly className="w-full px-3 py-2 rounded-lg border border-input bg-muted text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Category Code <span className="text-xs text-muted-foreground">(Read-only)</span></label>
+            <input value={category?.code || ""} readOnly className="w-full px-3 py-2 rounded-lg border border-input bg-muted text-sm" />
           </div>
         </div>
-
-        {/* Program & Region */}
-        <div className="space-y-4">
-          <div className="admin-card">
-            <h3 className="font-heading font-semibold text-foreground mb-4">Program Visibility</h3>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm"><input type="radio" name="prog" checked={programVisibility === "all"} onChange={() => setProgramVisibility("all")} className="accent-primary" /> Visible to All Programs</label>
-              <label className="flex items-center gap-2 text-sm"><input type="radio" name="prog" checked={programVisibility === "selected"} onChange={() => setProgramVisibility("selected")} className="accent-primary" /> Visible to Selected Programs</label>
+        <div className="flex items-center gap-6 mt-4">
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={active} onChange={() => setActive(!active)} className="accent-primary" /> Active</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showInNav} onChange={() => setShowInNav(!showInNav)} className="accent-primary" /> Show in Navigation</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={defaultExpanded} onChange={() => setDefaultExpanded(!defaultExpanded)} className="accent-primary" /> Default Expanded in Menu</label>
+        </div>
+        {category?.subcategories && category.subcategories.length > 0 && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-foreground mb-2">Subcategories</label>
+            <div className="flex flex-wrap gap-2">
+              {category.subcategories.map(s => (
+                <span key={s} className="px-3 py-1 rounded-full text-xs bg-muted text-foreground border border-border">{s}</span>
+              ))}
             </div>
           </div>
-          <div className="admin-card">
-            <h3 className="font-heading font-semibold text-foreground mb-4">Region Selection</h3>
+        )}
+      </div>
+
+      {/* Visibility Section */}
+      <div className="admin-card mb-4">
+        <h3 className="font-heading font-semibold text-foreground mb-4">Region Selection</h3>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => toggleRegion("All")}
+            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+              selectedRegions.length === allRegions.length - 1 ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"
+            }`}
+          >
+            ☐ All
+          </button>
+          {allRegions.filter(r => r !== "All").map(r => (
+            <button
+              key={r}
+              onClick={() => toggleRegion(r)}
+              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                selectedRegions.includes(r) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"
+              }`}
+            >
+              {selectedRegions.includes(r) ? "☑" : "☐"} {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="admin-card mb-4">
+        <h3 className="font-heading font-semibold text-foreground mb-4">Program Visibility</h3>
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" name="prog" checked={programVisibility === "all"} onChange={() => setProgramVisibility("all")} className="accent-primary" />
+            Visible for All Programs
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" name="prog" checked={programVisibility === "selected"} onChange={() => setProgramVisibility("selected")} className="accent-primary" />
+            Selected Programs
+          </label>
+          {programVisibility === "selected" && (
+            <div className="ml-6 flex flex-wrap gap-2">
+              {programs.map(p => (
+                <button key={p} onClick={() => toggleProgram(p, selectedPrograms, setSelectedPrograms)}
+                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${selectedPrograms.includes(p) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"}`}
+                >
+                  {selectedPrograms.includes(p) ? "☑" : "☐"} {p}
+                </button>
+              ))}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2 mt-3">Excluded Programs</label>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => toggleRegion("All")} className="px-3 py-1 rounded-full text-xs border border-input hover:bg-accent transition-colors">Select All</button>
-              {regions.map((r) => (
-                <button key={r} onClick={() => toggleRegion(r)} className={`px-3 py-1 rounded-full text-xs border transition-colors ${selectedRegions.includes(r) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"}`}>
-                  {r}
+              {programs.map(p => (
+                <button key={p} onClick={() => toggleProgram(p, excludedPrograms, setExcludedPrograms)}
+                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${excludedPrograms.includes(p) ? "bg-destructive text-destructive-foreground border-destructive" : "border-input hover:bg-accent"}`}
+                >
+                  {excludedPrograms.includes(p) ? "☑" : "☐"} {p}
                 </button>
               ))}
             </div>
@@ -174,9 +249,9 @@ const CategoryEditForm = ({ category, onBack }: { category?: any; onBack: () => 
       </div>
 
       {/* Buttons */}
-      <div className="flex gap-3 mt-6">
-        <button onClick={onBack} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Save</button>
+      <div className="flex justify-end gap-3">
         <button onClick={onBack} className="px-6 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button onClick={() => { if (category) onSave({ ...category, active, region: selectedRegions.join(", ") }); }} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Save</button>
       </div>
     </div>
   );

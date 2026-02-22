@@ -15,6 +15,11 @@ import PrivacyPolicyPage from "./pages/admin/PrivacyPolicyPage";
 import CookiePolicyPage from "./pages/admin/CookiePolicyPage";
 import EmailConfigPage from "./pages/admin/EmailConfigPage";
 import PlaceholderPage from "./pages/admin/PlaceholderPage";
+import BulkUploadPage from "./pages/admin/BulkUploadPage";
+import PopularProductsPage from "./pages/admin/PopularProductsPage";
+import ShowcaseProductsPage from "./pages/admin/ShowcaseProductsPage";
+import ProductBannerPage from "./pages/admin/ProductBannerPage";
+import PromoBannerPage from "./pages/admin/PromoBannerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,11 +42,11 @@ const AppRoutes = () => {
         <Route path="product-rules" element={<PlaceholderPage title="Product Rules" subtitle="Manage product restriction and compliance rules" />} />
         <Route path="product-alerts" element={<PlaceholderPage title="Product Alerts" subtitle="Configure product alert notifications" />} />
         <Route path="programs" element={<PlaceholderPage title="Program Configuration" subtitle="Manage program settings and visibility" />} />
-        <Route path="bulk-upload" element={<PlaceholderPage title="Bulk Upload" subtitle="Import products and data in bulk" />} />
-        <Route path="popular-products" element={<PlaceholderPage title="Popular Products" subtitle="Manage featured popular product listings" />} />
-        <Route path="showcase-products" element={<PlaceholderPage title="Showcase Products" subtitle="Configure product showcase displays" />} />
-        <Route path="product-banners" element={<PlaceholderPage title="Product Banner Setup" subtitle="Design and manage product page banners" />} />
-        <Route path="promo-banners" element={<PlaceholderPage title="Promotional Banner Setup" subtitle="Configure promotional campaign banners" />} />
+        <Route path="bulk-upload" element={<BulkUploadPage />} />
+        <Route path="popular-products" element={<PopularProductsPage />} />
+        <Route path="showcase-products" element={<ShowcaseProductsPage />} />
+        <Route path="product-banners" element={<ProductBannerPage />} />
+        <Route path="promo-banners" element={<PromoBannerPage />} />
         <Route path="background-images" element={<PlaceholderPage title="Background Images" subtitle="Manage site background imagery" />} />
         <Route path="email-config" element={<EmailConfigPage />} />
         <Route path="help-center" element={<HelpCenterPage />} />

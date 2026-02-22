@@ -1,7 +1,17 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 
-const tabs = ["Basic Info", "Pricing", "Content", "Media", "Flags", "Display Control", "Rules", "Alerts", "Program Visibility", "Audit"];
+const tabs = ["Basic Info", "Pricing", "Content", "Media", "Flags", "Display", "Rules", "Alerts", "Program", "Audit"];
+
+const categories = ["Beverages", "Restaurants", "Order In", "Meal Kits", "Goodies", "Grocery"];
+const subcategoriesMap: Record<string, string[]> = {
+  Beverages: ["Alcohol", "Coffee & Tea", "Mocktails", "Soda", "Smoothies"],
+  Restaurants: ["Restaurants", "Chain Restaurants", "Fast Food", "Restaurant Experiences"],
+  "Order In": ["Food Delivery"],
+  "Meal Kits": ["Premium Items", "Meal Kit"],
+  Goodies: ["Snacks", "Treats", "Edible Gifts"],
+  Grocery: [],
+};
 
 const ProductDetailPage = ({ product, onBack }: { product?: any; onBack: () => void }) => {
   const [activeTab, setActiveTab] = useState(0);
@@ -12,8 +22,7 @@ const ProductDetailPage = ({ product, onBack }: { product?: any; onBack: () => v
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-primary hover:underline mb-2">
           <ArrowLeft size={15} /> Back to Products
         </button>
-        <h1 className="page-title">Product Detail: {product?.name || "New Product"}</h1>
-        <p className="page-subtitle">Product ID: {product?.id || "—"}</p>
+        <h1 className="page-title">{product?.name || "New Product"} – {product?.id || "—"}</h1>
       </div>
 
       {/* Tabs */}
@@ -36,99 +45,128 @@ const ProductDetailPage = ({ product, onBack }: { product?: any; onBack: () => v
       <div className="admin-card">
         {activeTab === 0 && <BasicInfoTab product={product} />}
         {activeTab === 1 && <PricingTab />}
-        {activeTab === 2 && <ContentTab />}
+        {activeTab === 2 && <ContentTab product={product} />}
         {activeTab === 3 && <MediaTab />}
         {activeTab === 4 && <FlagsTab />}
-        {activeTab === 5 && <DisplayControlTab />}
+        {activeTab === 5 && <DisplayTab />}
         {activeTab === 6 && <RulesTab />}
         {activeTab === 7 && <AlertsTab />}
-        {activeTab === 8 && <ProgramVisibilityTab />}
+        {activeTab === 8 && <ProgramTab />}
         {activeTab === 9 && <AuditTab />}
       </div>
 
-      <div className="flex gap-3 mt-4">
-        <button className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Save</button>
+      <div className="flex justify-end gap-3 mt-4">
         <button onClick={onBack} className="px-6 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Cancel</button>
+        <button className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Save</button>
       </div>
     </div>
   );
 };
 
 const inputCls = "w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30";
+const readOnlyCls = "w-full px-3 py-2 rounded-lg border border-input bg-muted text-sm";
 const labelCls = "block text-sm font-medium text-foreground mb-1";
 
-const FormField = ({ label, children, readOnly }: { label: string; children?: React.ReactNode; readOnly?: boolean }) => (
-  <div>
-    <label className={labelCls}>{label} {readOnly && <span className="text-xs text-muted-foreground">(Read-only)</span>}</label>
-    {children || <input className={inputCls} readOnly={readOnly} />}
-  </div>
-);
-
-const BasicInfoTab = ({ product }: { product?: any }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <FormField label="Product ID" readOnly><input className={inputCls} value={product?.id || ""} readOnly /></FormField>
-    <FormField label="Product Name"><input className={inputCls} defaultValue={product?.name || ""} /></FormField>
-    <FormField label="Brand Name" />
-    <FormField label="Supplier Name" />
-    <FormField label="Supplier ID" />
-    <FormField label="Category">
-      <select className={inputCls}><option>Electronics</option><option>Accessories</option><option>Computing</option></select>
-    </FormField>
-    <FormField label="Subcategory">
-      <select className={inputCls}><option>Peripherals</option><option>Audio</option><option>Adapters</option></select>
-    </FormField>
-    <FormField label="Item Group" />
-    <FormField label="Location ID" />
-    <FormField label="Physical Nature">
-      <select className={inputCls}><option>Digital</option><option>Physical</option><option>Experience</option></select>
-    </FormField>
-    <FormField label="Status">
-      <select className={inputCls}><option>Active</option><option>Inactive</option></select>
-    </FormField>
-    <FormField label="Model Number" />
-    <div className="flex items-center gap-2 pt-6"><input type="checkbox" className="accent-primary" /><span className="text-sm">Shipped Product</span></div>
-  </div>
-);
+const BasicInfoTab = ({ product }: { product?: any }) => {
+  const [cat, setCat] = useState(product?.category || "");
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div><label className={labelCls}>Product PK <span className="text-xs text-muted-foreground">(Read-only)</span></label><input className={readOnlyCls} value="12345" readOnly /></div>
+      <div><label className={labelCls}>Product ID <span className="text-xs text-muted-foreground">(Read-only)</span></label><input className={readOnlyCls} value={product?.id || ""} readOnly /></div>
+      <div><label className={labelCls}>Product Name</label><input className={inputCls} defaultValue={product?.name || ""} /></div>
+      <div><label className={labelCls}>Brand Name</label><input className={inputCls} /></div>
+      <div><label className={labelCls}>Supplier Name</label><input className={inputCls} /></div>
+      <div><label className={labelCls}>Supplier ID</label><input className={inputCls} /></div>
+      <div><label className={labelCls}>Category</label>
+        <select className={inputCls} value={cat} onChange={e => setCat(e.target.value)}>
+          <option value="">Select...</option>
+          {categories.map(c => <option key={c}>{c}</option>)}
+        </select>
+      </div>
+      <div><label className={labelCls}>Subcategory</label>
+        <select className={inputCls}>
+          <option value="">Select...</option>
+          {(subcategoriesMap[cat] || []).map(s => <option key={s}>{s}</option>)}
+        </select>
+      </div>
+      <div><label className={labelCls}>Subcategory Group (Item Group)</label><input className={inputCls} /></div>
+      <div><label className={labelCls}>Location ID</label><input className={inputCls} /></div>
+      <div><label className={labelCls}>Physical Nature</label>
+        <select className={inputCls}><option>Digital</option><option>Physical</option><option>Experience</option></select>
+      </div>
+      <div><label className={labelCls}>Model Number</label><input className={inputCls} /></div>
+      <div><label className={labelCls}>Status</label>
+        <select className={inputCls}><option>Active</option><option>Inactive</option></select>
+      </div>
+      <div><label className={labelCls}>Data Source <span className="text-xs text-muted-foreground">(Read-only)</span></label><input className={readOnlyCls} value={product?.dataSource || "PS"} readOnly /></div>
+      <div className="flex items-center gap-6 col-span-1 md:col-span-2 pt-2">
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Shipped Product</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" defaultChecked={product?.active} className="accent-primary" /> Active</label>
+      </div>
+    </div>
+  );
+};
 
 const PricingTab = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <FormField label="Supplier Price"><input className={inputCls} type="number" placeholder="0.00" /></FormField>
-    <FormField label="MSRP"><input className={inputCls} type="number" placeholder="0.00" /></FormField>
-    <FormField label="Margin Table"><select className={inputCls}><option>Standard</option><option>Premium</option><option>Discount</option></select></FormField>
-    <FormField label="Margin %"><input className={inputCls} type="number" placeholder="15" /></FormField>
-    <FormField label="Calculated Retail Price" readOnly><input className={inputCls} readOnly placeholder="Auto-calculated" /></FormField>
-    <FormField label="Currency"><select className={inputCls}><option>USD</option><option>EUR</option><option>GBP</option></select></FormField>
-    <FormField label="Override Price"><input className={inputCls} type="number" placeholder="Optional" /></FormField>
-    <FormField label="Override Points"><input className={inputCls} type="number" placeholder="Optional" /></FormField>
-    <div className="flex items-center gap-6 col-span-2 pt-2">
+    <div><label className={labelCls}>Supplier Price</label><input className={inputCls} type="number" placeholder="0.00" /></div>
+    <div><label className={labelCls}>MSRP</label><input className={inputCls} type="number" placeholder="0.00" /></div>
+    <div><label className={labelCls}>Margin Table</label><select className={inputCls}><option>Standard</option><option>Premium</option><option>Discount</option></select></div>
+    <div><label className={labelCls}>Margin %</label><input className={inputCls} type="number" placeholder="15" /></div>
+    <div><label className={labelCls}>Calculated Retail Price <span className="text-xs text-muted-foreground">(Auto)</span></label><input className={readOnlyCls} readOnly placeholder="Auto-calculated" /></div>
+    <div><label className={labelCls}>Currency</label><select className={inputCls}><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option></select></div>
+    <div><label className={labelCls}>Program Point Value <span className="text-xs text-muted-foreground">(Auto)</span></label><input className={readOnlyCls} readOnly placeholder="Auto" /></div>
+    <div><label className={labelCls}>Converted Point Value <span className="text-xs text-muted-foreground">(Auto)</span></label><input className={readOnlyCls} readOnly placeholder="Auto" /></div>
+    <div><label className={labelCls}>Override Price</label><input className={inputCls} type="number" placeholder="Optional" /></div>
+    <div><label className={labelCls}>Override Point Value</label><input className={inputCls} type="number" placeholder="Optional" /></div>
+    <div className="flex items-center gap-6 col-span-1 md:col-span-2 pt-2">
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Tax Included</label>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Shipping Included</label>
     </div>
   </div>
 );
 
-const ContentTab = () => (
+const ContentTab = ({ product }: { product?: any }) => (
   <div className="space-y-4">
-    <FormField label="Overview"><textarea className={`${inputCls} min-h-[100px]`} placeholder="Product overview..." /></FormField>
-    <FormField label="Product Description"><textarea className={`${inputCls} min-h-[100px]`} placeholder="Detailed product description..." /></FormField>
-    <FormField label="Delivery Information"><textarea className={`${inputCls} min-h-[60px]`} placeholder="Delivery details..." /></FormField>
-    <FormField label="Terms & Conditions"><textarea className={`${inputCls} min-h-[60px]`} /></FormField>
-    <FormField label="Cancellation Policy"><textarea className={`${inputCls} min-h-[60px]`} /></FormField>
-    <FormField label="Keywords"><input className={inputCls} placeholder="keyword1, keyword2, keyword3" /></FormField>
+    <div><label className={labelCls}>Overview</label><textarea className={`${inputCls} min-h-[100px]`} placeholder="Product overview..." /></div>
+    <div><label className={labelCls}>Product Description</label><textarea className={`${inputCls} min-h-[100px]`} placeholder="Detailed description..." /></div>
+    <div><label className={labelCls}>Delivery Information</label><textarea className={`${inputCls} min-h-[60px]`} placeholder="Delivery details..." /></div>
+    <div><label className={labelCls}>Terms & Conditions</label><textarea className={`${inputCls} min-h-[60px]`} /></div>
+    {product?.dataSource === "Viator" && (
+      <div><label className={labelCls}>Cancellation Policy <span className="text-xs text-muted-foreground">(Viator only)</span></label><textarea className={`${inputCls} min-h-[60px]`} /></div>
+    )}
+    <div><label className={labelCls}>Keywords</label><input className={inputCls} placeholder="keyword1, keyword2, keyword3" /></div>
   </div>
 );
 
-const MediaTab = () => (
-  <div className="space-y-4">
-    <FormField label="Primary Image Upload">
-      <div className="border-2 border-dashed border-input rounded-lg p-8 text-center text-muted-foreground text-sm">
-        Drag & drop an image or click to browse
+const MediaTab = () => {
+  const [additionalImages, setAdditionalImages] = useState<string[]>([""]);
+  return (
+    <div className="space-y-4">
+      <div><label className={labelCls}>Primary Image URL</label><input className={inputCls} placeholder="https://..." /></div>
+      <div>
+        <label className={labelCls}>Upload Primary Image</label>
+        <div className="border-2 border-dashed border-input rounded-lg p-8 text-center text-muted-foreground text-sm cursor-pointer hover:border-primary/50 transition-colors">
+          Drag & drop an image or click to browse
+        </div>
       </div>
-    </FormField>
-    <FormField label="Image URL"><input className={inputCls} placeholder="https://..." /></FormField>
-    <FormField label="Image Alt Text"><input className={inputCls} placeholder="Descriptive alt text" /></FormField>
-  </div>
-);
+      <div>
+        <label className={labelCls}>Additional Images</label>
+        {additionalImages.map((_, i) => (
+          <div key={i} className="flex gap-2 mb-2">
+            <input className={inputCls} placeholder={`Image URL ${i + 1}`} />
+            <button onClick={() => setAdditionalImages(additionalImages.filter((_, j) => j !== i))} className="p-2 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+          </div>
+        ))}
+        <button onClick={() => setAdditionalImages([...additionalImages, ""])} className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"><Plus size={13} /> Add More Image</button>
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        <div className="aspect-square rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">Thumbnail</div>
+      </div>
+      <div><label className={labelCls}>Image Alt Text</label><input className={inputCls} placeholder="Descriptive alt text" /></div>
+    </div>
+  );
+};
 
 const FlagsTab = () => (
   <div className="space-y-3">
@@ -140,61 +178,86 @@ const FlagsTab = () => (
   </div>
 );
 
-const DisplayControlTab = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <FormField label="Display Start Date"><input className={inputCls} type="date" /></FormField>
-    <FormField label="Display End Date"><input className={inputCls} type="date" /></FormField>
-    <div className="col-span-2">
-      <label className={labelCls}>Recurring Days</label>
-      <div className="flex gap-2 flex-wrap">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <button key={d} className="px-3 py-1.5 rounded-full text-xs border border-input hover:bg-accent transition-colors">{d}</button>
-        ))}
+const DisplayTab = () => {
+  const [days, setDays] = useState<string[]>([]);
+  const toggleDay = (d: string) => setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div><label className={labelCls}>Display Start Date</label><input className={inputCls} type="date" /></div>
+      <div><label className={labelCls}>Display End Date</label><input className={inputCls} type="date" /></div>
+      <div className="col-span-1 md:col-span-2">
+        <label className={labelCls}>Recurring Days</label>
+        <div className="flex gap-2 flex-wrap">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
+            <button key={d} onClick={() => toggleDay(d)} className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${days.includes(d) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"}`}>{d}</button>
+          ))}
+        </div>
+      </div>
+      <div><label className={labelCls}>Age Restriction</label><input className={inputCls} placeholder="None" /></div>
+      <div><label className={labelCls}>Max Quantity Per User</label><input className={inputCls} type="number" placeholder="0" /></div>
+      <div><label className={labelCls}>Purchase Acknowledgement Text</label><textarea className={`${inputCls} min-h-[60px]`} /></div>
+      <div className="col-span-1 md:col-span-2 space-y-2">
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Purchase Acknowledgement Required</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Show Purchase Checkbox Before Add to Cart</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Hide If Out of Stock</label>
       </div>
     </div>
-    <FormField label="Max Quantity Per User"><input className={inputCls} type="number" placeholder="0" /></FormField>
-    <FormField label="Age Restriction"><input className={inputCls} placeholder="None" /></FormField>
-    <div className="col-span-2 space-y-2">
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Purchase Acknowledgement Required</label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-primary" /> Hide If Out of Stock</label>
-    </div>
-  </div>
-);
+  );
+};
 
 const RulesTab = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <FormField label="Rule Type"><select className={inputCls}><option>None</option><option>Country Restriction</option><option>State Restriction</option></select></FormField>
-    <FormField label="Enforcement Type"><select className={inputCls}><option>Hard Block</option><option>Soft Warning</option></select></FormField>
-    <FormField label="Country Restriction"><input className={inputCls} /></FormField>
-    <FormField label="State Restriction"><input className={inputCls} /></FormField>
-    <FormField label="Postal Code Restriction"><input className={inputCls} /></FormField>
-    <FormField label="Program Restriction"><input className={inputCls} /></FormField>
-    <div className="col-span-2"><FormField label="Warning Message"><textarea className={`${inputCls} min-h-[60px]`} /></FormField></div>
+    <div><label className={labelCls}>Rule Type</label>
+      <select className={inputCls}><option>None</option><option>Location Restriction</option><option>Program Restriction</option><option>Shipping Restriction</option></select>
+    </div>
+    <div><label className={labelCls}>Country Restriction</label><input className={inputCls} placeholder="Multi-select countries..." /></div>
+    <div><label className={labelCls}>State Restriction</label><input className={inputCls} placeholder="Multi-select states..." /></div>
+    <div><label className={labelCls}>Postal Code Restriction</label><input className={inputCls} /></div>
+    <div><label className={labelCls}>Program Restriction</label><input className={inputCls} /></div>
+    <div className="flex items-center gap-2 pt-6"><input type="checkbox" className="accent-primary" /><span className="text-sm">Show Warning Message</span></div>
+    <div className="col-span-1 md:col-span-2"><label className={labelCls}>Warning Message Text</label><textarea className={`${inputCls} min-h-[60px]`} /></div>
   </div>
 );
 
 const AlertsTab = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <FormField label="Alert Title"><input className={inputCls} /></FormField>
-    <FormField label="Display Position"><select className={inputCls}><option>Top</option><option>Bottom</option><option>Inline</option></select></FormField>
-    <div className="col-span-2"><FormField label="Alert Message"><textarea className={`${inputCls} min-h-[60px]`} /></FormField></div>
-    <FormField label="Page Scope"><input className={inputCls} /></FormField>
-    <FormField label="Start Date"><input className={inputCls} type="date" /></FormField>
-    <FormField label="End Date"><input className={inputCls} type="date" /></FormField>
-    <div className="flex items-center gap-2 pt-6"><input type="checkbox" className="accent-primary" /><span className="text-sm">Active</span></div>
+    <div><label className={labelCls}>Alert Title</label><input className={inputCls} /></div>
+    <div><label className={labelCls}>Alert Position</label>
+      <select className={inputCls}><option>Top</option><option>Below Description</option></select>
+    </div>
+    <div className="col-span-1 md:col-span-2"><label className={labelCls}>Alert Message</label><textarea className={`${inputCls} min-h-[60px]`} /></div>
+    <div><label className={labelCls}>Which Page</label>
+      <select className={inputCls}><option>Product</option><option>Checkout</option><option>Both</option></select>
+    </div>
+    <div><label className={labelCls}>Start Date</label><input className={inputCls} type="date" /></div>
+    <div><label className={labelCls}>End Date</label><input className={inputCls} type="date" /></div>
+    <div className="flex items-center gap-2 pt-6"><input type="checkbox" className="accent-primary" defaultChecked /><span className="text-sm">Active</span></div>
   </div>
 );
 
-const ProgramVisibilityTab = () => (
-  <div className="space-y-4">
-    <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm"><input type="radio" name="pv" className="accent-primary" defaultChecked /> Visible to All Programs</label>
-      <label className="flex items-center gap-2 text-sm"><input type="radio" name="pv" className="accent-primary" /> Visible to Selected Programs</label>
+const ProgramTab = () => {
+  const [vis, setVis] = useState("all");
+  const programs = ["Program Alpha", "Program Beta", "Program Gamma", "Program Delta", "Program Epsilon"];
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm"><input type="radio" name="pv" checked={vis === "all"} onChange={() => setVis("all")} className="accent-primary" /> Visible to All</label>
+        <label className="flex items-center gap-2 text-sm"><input type="radio" name="pv" checked={vis === "selected"} onChange={() => setVis("selected")} className="accent-primary" /> Selected Programs</label>
+        <label className="flex items-center gap-2 text-sm"><input type="radio" name="pv" checked={vis === "excluded"} onChange={() => setVis("excluded")} className="accent-primary" /> Excluded Programs</label>
+      </div>
+      {vis !== "all" && (
+        <div>
+          <label className={labelCls}>{vis === "selected" ? "Selected" : "Excluded"} Programs</label>
+          <div className="flex flex-wrap gap-2">
+            {programs.map(p => (
+              <button key={p} className="px-3 py-1.5 rounded-full text-xs border border-input hover:bg-accent transition-colors">{p}</button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
-    <FormField label="Selected Programs"><select className={inputCls} multiple><option>Program A</option><option>Program B</option><option>Program C</option></select></FormField>
-    <FormField label="Excluded Programs"><select className={inputCls} multiple><option>Program D</option><option>Program E</option></select></FormField>
-  </div>
-);
+  );
+};
 
 const AuditTab = () => (
   <div className="space-y-4">
@@ -206,18 +269,23 @@ const AuditTab = () => (
     </div>
     <div>
       <label className={labelCls}>Change Log</label>
-      <div className="space-y-2 mt-2">
-        {[
-          { date: "2026-02-20 14:22", user: "manager@ontra.com", change: "Updated pricing - MSRP changed from $29.99 to $34.99" },
-          { date: "2026-02-18 10:15", user: "admin@ontra.com", change: "Activated product for EMEA region" },
-          { date: "2026-01-15 09:30", user: "admin@ontra.com", change: "Product created" },
-        ].map((log, i) => (
-          <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/50 text-sm">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{log.date}</span>
-            <span className="text-xs text-primary">{log.user}</span>
-            <span className="text-foreground">{log.change}</span>
-          </div>
-        ))}
+      <div className="overflow-x-auto mt-2">
+        <table className="admin-table">
+          <thead><tr><th>Date</th><th>User</th><th>Change</th></tr></thead>
+          <tbody>
+            {[
+              { date: "2026-02-20 14:22", user: "manager@ontra.com", change: "Updated pricing - MSRP changed from $29.99 to $34.99" },
+              { date: "2026-02-18 10:15", user: "admin@ontra.com", change: "Activated product for EMEA region" },
+              { date: "2026-01-15 09:30", user: "admin@ontra.com", change: "Product created" },
+            ].map((log, i) => (
+              <tr key={i}>
+                <td className="text-xs text-muted-foreground whitespace-nowrap">{log.date}</td>
+                <td className="text-xs text-primary">{log.user}</td>
+                <td className="text-sm">{log.change}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
