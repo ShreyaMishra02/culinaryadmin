@@ -2,25 +2,69 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import LoginPage from "./pages/LoginPage";
+import AdminLayout from "./layouts/AdminLayout";
+import DashboardPage from "./pages/admin/DashboardPage";
+import CategoryManagementPage from "./pages/admin/CategoryManagementPage";
+import ProductManagementPage from "./pages/admin/ProductManagementPage";
+import HelpCenterPage from "./pages/admin/HelpCenterPage";
+import TermsPage from "./pages/admin/TermsPage";
+import PrivacyPolicyPage from "./pages/admin/PrivacyPolicyPage";
+import CookiePolicyPage from "./pages/admin/CookiePolicyPage";
+import EmailConfigPage from "./pages/admin/EmailConfigPage";
+import PlaceholderPage from "./pages/admin/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
+};
+
+const AppRoutes = () => {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/" element={isAuthenticated ? <Navigate to="/admin" replace /> : <LoginPage />} />
+      <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+        <Route index element={<DashboardPage />} />
+        <Route path="categories" element={<CategoryManagementPage />} />
+        <Route path="products" element={<ProductManagementPage />} />
+        <Route path="product-rules" element={<PlaceholderPage title="Product Rules" subtitle="Manage product restriction and compliance rules" />} />
+        <Route path="product-alerts" element={<PlaceholderPage title="Product Alerts" subtitle="Configure product alert notifications" />} />
+        <Route path="programs" element={<PlaceholderPage title="Program Configuration" subtitle="Manage program settings and visibility" />} />
+        <Route path="bulk-upload" element={<PlaceholderPage title="Bulk Upload" subtitle="Import products and data in bulk" />} />
+        <Route path="popular-products" element={<PlaceholderPage title="Popular Products" subtitle="Manage featured popular product listings" />} />
+        <Route path="showcase-products" element={<PlaceholderPage title="Showcase Products" subtitle="Configure product showcase displays" />} />
+        <Route path="product-banners" element={<PlaceholderPage title="Product Banner Setup" subtitle="Design and manage product page banners" />} />
+        <Route path="promo-banners" element={<PlaceholderPage title="Promotional Banner Setup" subtitle="Configure promotional campaign banners" />} />
+        <Route path="background-images" element={<PlaceholderPage title="Background Images" subtitle="Manage site background imagery" />} />
+        <Route path="email-config" element={<EmailConfigPage />} />
+        <Route path="help-center" element={<HelpCenterPage />} />
+        <Route path="terms" element={<TermsPage />} />
+        <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="cookie-policy" element={<CookiePolicyPage />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
