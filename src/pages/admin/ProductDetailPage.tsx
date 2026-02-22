@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 
-const tabs = ["Basic Info", "Pricing", "Content", "Media", "Flags", "Display", "Rules", "Alerts", "Program", "Audit"];
+const tabs = ["Basic Info", "Pricing", "Content", "Media", "Flags", "Display", "Program", "Audit"];
 
 const categories = ["Beverages", "Restaurants", "Order In", "Meal Kits", "Goodies", "Grocery"];
 const subcategoriesMap: Record<string, string[]> = {
@@ -49,10 +49,8 @@ const ProductDetailPage = ({ product, onBack }: { product?: any; onBack: () => v
         {activeTab === 3 && <MediaTab />}
         {activeTab === 4 && <FlagsTab />}
         {activeTab === 5 && <DisplayTab />}
-        {activeTab === 6 && <RulesTab />}
-        {activeTab === 7 && <AlertsTab />}
-        {activeTab === 8 && <ProgramTab />}
-        {activeTab === 9 && <AuditTab />}
+        {activeTab === 6 && <ProgramTab />}
+        {activeTab === 7 && <AuditTab />}
       </div>
 
       <div className="flex justify-end gap-3 mt-4">
@@ -205,35 +203,7 @@ const DisplayTab = () => {
   );
 };
 
-const RulesTab = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div><label className={labelCls}>Rule Type</label>
-      <select className={inputCls}><option>None</option><option>Location Restriction</option><option>Program Restriction</option><option>Shipping Restriction</option></select>
-    </div>
-    <div><label className={labelCls}>Country Restriction</label><input className={inputCls} placeholder="Multi-select countries..." /></div>
-    <div><label className={labelCls}>State Restriction</label><input className={inputCls} placeholder="Multi-select states..." /></div>
-    <div><label className={labelCls}>Postal Code Restriction</label><input className={inputCls} /></div>
-    <div><label className={labelCls}>Program Restriction</label><input className={inputCls} /></div>
-    <div className="flex items-center gap-2 pt-6"><input type="checkbox" className="accent-primary" /><span className="text-sm">Show Warning Message</span></div>
-    <div className="col-span-1 md:col-span-2"><label className={labelCls}>Warning Message Text</label><textarea className={`${inputCls} min-h-[60px]`} /></div>
-  </div>
-);
 
-const AlertsTab = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div><label className={labelCls}>Alert Title</label><input className={inputCls} /></div>
-    <div><label className={labelCls}>Alert Position</label>
-      <select className={inputCls}><option>Top</option><option>Below Description</option></select>
-    </div>
-    <div className="col-span-1 md:col-span-2"><label className={labelCls}>Alert Message</label><textarea className={`${inputCls} min-h-[60px]`} /></div>
-    <div><label className={labelCls}>Which Page</label>
-      <select className={inputCls}><option>Product</option><option>Checkout</option><option>Both</option></select>
-    </div>
-    <div><label className={labelCls}>Start Date</label><input className={inputCls} type="date" /></div>
-    <div><label className={labelCls}>End Date</label><input className={inputCls} type="date" /></div>
-    <div className="flex items-center gap-2 pt-6"><input type="checkbox" className="accent-primary" defaultChecked /><span className="text-sm">Active</span></div>
-  </div>
-);
 
 const ProgramTab = () => {
   const [vis, setVis] = useState("all");
