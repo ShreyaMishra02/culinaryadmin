@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, FolderTree, Package, Settings2,
-  Upload, Star, Eye, Image, Megaphone, ImageIcon, Mail,
+  Upload, Star, Eye, Image, Megaphone, MousePointerClick, ImageIcon, Mail,
   HelpCircle, FileText, Shield, Cookie, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
@@ -17,6 +17,7 @@ const navItems = [
   { label: "Showcase Products", icon: Eye, path: "/admin/showcase-products" },
   { label: "Product Banner Setup", icon: Image, path: "/admin/product-banners" },
   { label: "Promotional Banner Setup", icon: Megaphone, path: "/admin/promo-banners" },
+  { label: "Banner Card Definition", icon: MousePointerClick, path: "/admin/banner-card-definition" },
   { label: "Background Images", icon: ImageIcon, path: "/admin/background-images" },
   { label: "Email Configuration", icon: Mail, path: "/admin/email-config" },
   { label: "Help Center", icon: HelpCircle, path: "/admin/help-center" },

@@ -22,6 +22,7 @@ import PopularProductsPage from "./pages/admin/PopularProductsPage";
 import ShowcaseProductsPage from "./pages/admin/ShowcaseProductsPage";
 import ProductBannerPage from "./pages/admin/ProductBannerPage";
 import PromoBannerPage from "./pages/admin/PromoBannerPage";
+import BannerCardDefinitionPage from "./pages/admin/BannerCardDefinitionPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const AppRoutes = () => {
         <Route path="showcase-products" element={<ShowcaseProductsPage />} />
         <Route path="product-banners" element={<ProductBannerPage />} />
         <Route path="promo-banners" element={<PromoBannerPage />} />
+        <Route path="banner-card-definition" element={<BannerCardDefinitionPage />} />
         <Route path="background-images" element={<BackgroundImagesPage />} />
         <Route path="email-config" element={<EmailConfigPage />} />
         <Route path="help-center" element={<HelpCenterPage />} />
