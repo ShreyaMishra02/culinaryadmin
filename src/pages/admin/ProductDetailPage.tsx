@@ -775,7 +775,7 @@ const ProductDetailPage = ({ product, onBack }: { product?: any; onBack: () => v
 
   const renderTabContent = () => {
     if (currentLabel === "Product Rules") return <ProductRulesTab />;
-    if (currentLabel === "Location Restrictions") return <LocationRestrictionsTab />;
+    if (currentLabel === "Location Restrictions") return <LocationRestrictionsTab product={product} />;
 
     const staticTab =
       staticTabs.find((t) => t.label === currentLabel) ||
