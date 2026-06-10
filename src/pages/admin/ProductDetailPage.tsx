@@ -457,8 +457,8 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
     .filter(Boolean) as string[];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-      <div className="xl:col-span-2 space-y-4">
+    <div className="space-y-4">
+      <div className="space-y-4">
         {/* Restriction Configuration */}
         <div className="rounded-lg border border-border p-4">
           <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Configuration</h3>
