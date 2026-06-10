@@ -433,6 +433,10 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
   const [effectiveDate, setEffectiveDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
 
+  const [availabilityType, setAvailabilityType] = useState<"everywhere" | "selected">("everywhere");
+  const [restrictionBehavior, setRestrictionBehavior] = useState<"hide" | "warn" | "hide_warn">("hide");
+  const showMessage = restrictionBehavior !== "hide";
+
   const filteredProducts = useMemo(() => {
     const q = productSearch.toLowerCase();
     if (!q) return productCatalog;
