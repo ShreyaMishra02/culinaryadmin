@@ -742,85 +742,8 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
         </div>
       </div>
 
-      {/* Restriction Summary */}
-      <aside className="xl:col-span-1">
-        <div className="rounded-lg border border-border p-4 xl:sticky xl:top-4 bg-muted/30">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Summary</h3>
-          <dl className="space-y-3 text-sm">
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Applies To</dt>
-              <dd className="text-foreground">{appliesTo}</dd>
-            </div>
-
-            {appliesTo === "This Product Only" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Product</dt>
-                <dd className="text-foreground">{product?.name || "Current Product"} ({product?.id || "—"})</dd>
-              </div>
-            )}
-            {appliesTo === "Multiple Products" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Selected Products ({selectedProducts.length})</dt>
-                <dd className="text-foreground">
-                  {selectedProductNames.length > 0
-                    ? <ul className="list-disc pl-4">{selectedProductNames.map((n) => <li key={n}>{n}</li>)}</ul>
-                    : <span className="text-muted-foreground">None selected</span>}
-                </dd>
-              </div>
-            )}
-            {appliesTo === "Entire Category" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Category</dt>
-                <dd className="text-foreground">{targetCategory || "—"}</dd>
-              </div>
-            )}
-            {appliesTo === "Entire Subcategory" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Category / Subcategory</dt>
-                <dd className="text-foreground">{targetCategory || "—"} / {targetSubcategory || "—"}</dd>
-              </div>
-            )}
-
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Available</dt>
-              <dd className="text-foreground space-y-0.5">
-                <div><span className="text-muted-foreground">Countries:</span> {availCountries.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">States:</span> {availStates.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Cities:</span> {availCities.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Postal Codes:</span> {availPostals.join(", ") || "—"}</div>
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Excluded</dt>
-              <dd className="text-foreground space-y-0.5">
-                <div><span className="text-muted-foreground">Countries:</span> {exclCountries.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">States:</span> {exclStates.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Cities:</span> {exclCities.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Postal Codes:</span> {exclPostals.join(", ") || "—"}</div>
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</dt>
-              <dd className="text-foreground">{active ? "Active" : "Inactive"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effective Date</dt>
-              <dd className="text-foreground">{effectiveDate ? format(effectiveDate, "PPP") : "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">End Date</dt>
-              <dd className="text-foreground">{endDate ? format(endDate, "PPP") : "—"}</dd>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
-              Note: Excluded locations always override Available locations.
-            </p>
-          </dl>
-        </div>
-      </aside>
     </div>
+
   );
 };
 
