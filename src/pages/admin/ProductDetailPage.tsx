@@ -433,6 +433,10 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
   const [effectiveDate, setEffectiveDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
 
+  const [availabilityType, setAvailabilityType] = useState<"everywhere" | "selected">("everywhere");
+  const [restrictionBehavior, setRestrictionBehavior] = useState<"hide" | "warn" | "hide_warn">("hide");
+  const showMessage = restrictionBehavior !== "hide";
+
   const filteredProducts = useMemo(() => {
     const q = productSearch.toLowerCase();
     if (!q) return productCatalog;
@@ -453,8 +457,8 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
     .filter(Boolean) as string[];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-      <div className="xl:col-span-2 space-y-4">
+    <div className="space-y-4">
+      <div className="space-y-4">
         {/* Restriction Configuration */}
         <div className="rounded-lg border border-border p-4">
           <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Configuration</h3>
@@ -599,14 +603,49 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
         </div>
 
         {/* Available Locations */}
-        <LocationGroup
-          title="Available Locations"
-          countries={availCountries} setCountries={setAvailCountries}
-          states={availStates} setStates={setAvailStates}
-          cities={availCities} setCities={setAvailCities}
-          postals={availPostals} setPostals={setAvailPostals}
-          countryScope={availCountries}
-        />
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">Availability Type</label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="availabilityType"
+                  checked={availabilityType === "everywhere"}
+                  onChange={() => setAvailabilityType("everywhere")}
+                  className="accent-primary"
+                />
+                Available Everywhere
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="availabilityType"
+                  checked={availabilityType === "selected"}
+                  onChange={() => setAvailabilityType("selected")}
+                  className="accent-primary"
+                />
+                Available Only In Selected Locations
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {availabilityType === "everywhere"
+                ? "Product is available in all locations."
+                : "Configure allowed countries, states, cities, and postal codes below."}
+            </p>
+          </div>
+
+          {availabilityType === "selected" && (
+            <LocationGroup
+              title="Available Locations"
+              countries={availCountries} setCountries={setAvailCountries}
+              states={availStates} setStates={setAvailStates}
+              cities={availCities} setCities={setAvailCities}
+              postals={availPostals} setPostals={setAvailPostals}
+              countryScope={availCountries}
+            />
+          )}
+        </div>
 
         {/* Excluded Locations */}
         <LocationGroup
@@ -618,14 +657,42 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
           countryScope={availCountries}
         />
 
-        {/* Restriction Message */}
+        {/* Restriction Behavior */}
         <div className="rounded-lg border border-border p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Message (Optional)</h3>
-          <p className="text-xs text-muted-foreground mb-3">
-            Informational only — this message does not control visibility logic. Excluded locations always take priority over available locations.
-          </p>
-          <FieldRenderer field={{ name: "Restriction Message", type: "richtext", source: "Ontra Upload", colSpan: 2 }} />
+          <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Behavior</h3>
+          <div className="space-y-2">
+            {[
+              { id: "hide", label: "Hide Product Completely", desc: "Product is hidden from customers. No warning message displayed." },
+              { id: "warn", label: "Show Warning Message Only", desc: "Product remains visible. Customer sees restriction warning message." },
+              { id: "hide_warn", label: "Hide Product Completely + Show Warning Message", desc: "Product is hidden; warning message stored for future integrations." },
+            ].map((opt) => (
+              <label key={opt.id} className="flex items-start gap-2 text-sm cursor-pointer p-2 rounded hover:bg-muted/50">
+                <input
+                  type="radio"
+                  name="restrictionBehavior"
+                  checked={restrictionBehavior === opt.id}
+                  onChange={() => setRestrictionBehavior(opt.id as any)}
+                  className="accent-primary mt-0.5"
+                />
+                <div>
+                  <div className="font-medium text-foreground">{opt.label}</div>
+                  <div className="text-xs text-muted-foreground">{opt.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
+
+        {/* Restriction Message */}
+        {showMessage && (
+          <div className="rounded-lg border border-border p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Message (Optional)</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              This warning message is shown to customers based on the selected Restriction Behavior.
+            </p>
+            <FieldRenderer field={{ name: "Restriction Message", type: "richtext", source: "Ontra Upload", colSpan: 2 }} />
+          </div>
+        )}
 
         {/* Restriction Status */}
         <div className="rounded-lg border border-border p-4">
@@ -675,85 +742,8 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
         </div>
       </div>
 
-      {/* Restriction Summary */}
-      <aside className="xl:col-span-1">
-        <div className="rounded-lg border border-border p-4 xl:sticky xl:top-4 bg-muted/30">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Summary</h3>
-          <dl className="space-y-3 text-sm">
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Applies To</dt>
-              <dd className="text-foreground">{appliesTo}</dd>
-            </div>
-
-            {appliesTo === "This Product Only" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Product</dt>
-                <dd className="text-foreground">{product?.name || "Current Product"} ({product?.id || "—"})</dd>
-              </div>
-            )}
-            {appliesTo === "Multiple Products" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Selected Products ({selectedProducts.length})</dt>
-                <dd className="text-foreground">
-                  {selectedProductNames.length > 0
-                    ? <ul className="list-disc pl-4">{selectedProductNames.map((n) => <li key={n}>{n}</li>)}</ul>
-                    : <span className="text-muted-foreground">None selected</span>}
-                </dd>
-              </div>
-            )}
-            {appliesTo === "Entire Category" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Category</dt>
-                <dd className="text-foreground">{targetCategory || "—"}</dd>
-              </div>
-            )}
-            {appliesTo === "Entire Subcategory" && (
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Category / Subcategory</dt>
-                <dd className="text-foreground">{targetCategory || "—"} / {targetSubcategory || "—"}</dd>
-              </div>
-            )}
-
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Available</dt>
-              <dd className="text-foreground space-y-0.5">
-                <div><span className="text-muted-foreground">Countries:</span> {availCountries.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">States:</span> {availStates.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Cities:</span> {availCities.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Postal Codes:</span> {availPostals.join(", ") || "—"}</div>
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Excluded</dt>
-              <dd className="text-foreground space-y-0.5">
-                <div><span className="text-muted-foreground">Countries:</span> {exclCountries.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">States:</span> {exclStates.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Cities:</span> {exclCities.join(", ") || "—"}</div>
-                <div><span className="text-muted-foreground">Postal Codes:</span> {exclPostals.join(", ") || "—"}</div>
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</dt>
-              <dd className="text-foreground">{active ? "Active" : "Inactive"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effective Date</dt>
-              <dd className="text-foreground">{effectiveDate ? format(effectiveDate, "PPP") : "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">End Date</dt>
-              <dd className="text-foreground">{endDate ? format(endDate, "PPP") : "—"}</dd>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
-              Note: Excluded locations always override Available locations.
-            </p>
-          </dl>
-        </div>
-      </aside>
     </div>
+
   );
 };
 
