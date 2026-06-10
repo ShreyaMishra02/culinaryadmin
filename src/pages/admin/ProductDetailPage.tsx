@@ -603,14 +603,49 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
         </div>
 
         {/* Available Locations */}
-        <LocationGroup
-          title="Available Locations"
-          countries={availCountries} setCountries={setAvailCountries}
-          states={availStates} setStates={setAvailStates}
-          cities={availCities} setCities={setAvailCities}
-          postals={availPostals} setPostals={setAvailPostals}
-          countryScope={availCountries}
-        />
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">Availability Type</label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="availabilityType"
+                  checked={availabilityType === "everywhere"}
+                  onChange={() => setAvailabilityType("everywhere")}
+                  className="accent-primary"
+                />
+                Available Everywhere
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="availabilityType"
+                  checked={availabilityType === "selected"}
+                  onChange={() => setAvailabilityType("selected")}
+                  className="accent-primary"
+                />
+                Available Only In Selected Locations
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {availabilityType === "everywhere"
+                ? "Product is available in all locations."
+                : "Configure allowed countries, states, cities, and postal codes below."}
+            </p>
+          </div>
+
+          {availabilityType === "selected" && (
+            <LocationGroup
+              title="Available Locations"
+              countries={availCountries} setCountries={setAvailCountries}
+              states={availStates} setStates={setAvailStates}
+              cities={availCities} setCities={setAvailCities}
+              postals={availPostals} setPostals={setAvailPostals}
+              countryScope={availCountries}
+            />
+          )}
+        </div>
 
         {/* Excluded Locations */}
         <LocationGroup
@@ -622,14 +657,42 @@ const LocationRestrictionsTab = ({ product }: { product?: any }) => {
           countryScope={availCountries}
         />
 
-        {/* Restriction Message */}
+        {/* Restriction Behavior */}
         <div className="rounded-lg border border-border p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Message (Optional)</h3>
-          <p className="text-xs text-muted-foreground mb-3">
-            Informational only — this message does not control visibility logic. Excluded locations always take priority over available locations.
-          </p>
-          <FieldRenderer field={{ name: "Restriction Message", type: "richtext", source: "Ontra Upload", colSpan: 2 }} />
+          <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Behavior</h3>
+          <div className="space-y-2">
+            {[
+              { id: "hide", label: "Hide Product Completely", desc: "Product is hidden from customers. No warning message displayed." },
+              { id: "warn", label: "Show Warning Message Only", desc: "Product remains visible. Customer sees restriction warning message." },
+              { id: "hide_warn", label: "Hide Product Completely + Show Warning Message", desc: "Product is hidden; warning message stored for future integrations." },
+            ].map((opt) => (
+              <label key={opt.id} className="flex items-start gap-2 text-sm cursor-pointer p-2 rounded hover:bg-muted/50">
+                <input
+                  type="radio"
+                  name="restrictionBehavior"
+                  checked={restrictionBehavior === opt.id}
+                  onChange={() => setRestrictionBehavior(opt.id as any)}
+                  className="accent-primary mt-0.5"
+                />
+                <div>
+                  <div className="font-medium text-foreground">{opt.label}</div>
+                  <div className="text-xs text-muted-foreground">{opt.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
+
+        {/* Restriction Message */}
+        {showMessage && (
+          <div className="rounded-lg border border-border p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Restriction Message (Optional)</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              This warning message is shown to customers based on the selected Restriction Behavior.
+            </p>
+            <FieldRenderer field={{ name: "Restriction Message", type: "richtext", source: "Ontra Upload", colSpan: 2 }} />
+          </div>
+        )}
 
         {/* Restriction Status */}
         <div className="rounded-lg border border-border p-4">
