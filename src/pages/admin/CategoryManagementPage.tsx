@@ -258,4 +258,180 @@ const CategoryEditForm = ({ category, onBack, onSave }: { category?: CategoryDat
   );
 };
 
+/* ─── Program Upload Section ─── */
+interface ProgramRow { id: string; name: string }
+
+interface UploadSectionProps {
+  title: string;
+  status: string;
+  statusClass: string;
+  rows: ProgramRow[];
+  setRows: (r: ProgramRow[]) => void;
+  uploadLabel: string;
+  sampleRows: string[][];
+  sampleName: string;
+}
+
+const PAGE_SIZE = 10;
+
+const ProgramUploadSection = ({ title, status, statusClass, rows, setRows, uploadLabel, sampleRows, sampleName }: UploadSectionProps) => {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<"id" | "name">("id");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([["Program ID", "Program Name"], ...sampleRows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, `${sampleName}.xlsx`);
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!["xlsx", "xls", "csv"].includes(ext || "")) {
+      toast({ title: "Invalid file format", description: "Only .xlsx, .xls, .csv files are allowed.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum file size is 10 MB.", variant: "destructive" });
+      return;
+    }
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      if (!data.length) throw new Error("empty");
+      const first = data[0];
+      const keys = Object.keys(first).map(k => k.toLowerCase().trim());
+      if (!keys.some(k => k.includes("program id")) || !keys.some(k => k.includes("program name"))) {
+        toast({ title: "Invalid file format", description: "Program ID and Program Name are mandatory.", variant: "destructive" });
+        return;
+      }
+      const parsed: ProgramRow[] = data.map(r => {
+        const idKey = Object.keys(r).find(k => k.toLowerCase().trim().includes("program id")) || "";
+        const nameKey = Object.keys(r).find(k => k.toLowerCase().trim().includes("program name")) || "";
+        return { id: String(r[idKey]).trim(), name: String(r[nameKey]).trim() };
+      }).filter(r => r.id && r.name);
+
+      const seen = new Set<string>();
+      for (const r of parsed) {
+        if (seen.has(r.id)) {
+          toast({ title: "Duplicate Program ID found", description: r.id, variant: "destructive" });
+          return;
+        }
+        seen.add(r.id);
+      }
+      setRows(parsed);
+      setPage(1);
+      toast({ title: "Upload successful", description: `${parsed.length} programs loaded.` });
+    } catch {
+      toast({ title: "Upload failed", description: "Could not read the file.", variant: "destructive" });
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const f = rows.filter(r =>
+      !search || r.id.toLowerCase().includes(search.toLowerCase()) || r.name.toLowerCase().includes(search.toLowerCase())
+    );
+    return [...f].sort((a, b) => {
+      const av = a[sortKey].toLowerCase();
+      const bv = b[sortKey].toLowerCase();
+      return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+  }, [rows, search, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const toggleSort = (key: "id" | "name") => {
+    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  const removeRow = (id: string) => setRows(rows.filter(r => r.id !== id));
+
+  return (
+    <div className="admin-card mb-4">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <h3 className="font-heading font-semibold text-foreground">
+          {title} <span className="text-xs text-muted-foreground font-normal">({rows.length} Records)</span>
+        </h3>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={downloadTemplate} type="button" className="flex items-center gap-1.5 px-3 py-2 border border-input rounded-lg text-xs text-muted-foreground hover:bg-muted">
+            <Download size={13} /> Download Sample Template
+          </button>
+          <button onClick={() => fileRef.current?.click()} type="button" className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90">
+            <Upload size={13} /> {uploadLabel}
+          </button>
+          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
+        </div>
+      </div>
+
+      {rows.length > 0 && (
+        <>
+          <div className="mb-3 relative max-w-xs">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search Program ID / Name" className="w-full pl-9 pr-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th><button onClick={() => toggleSort("id")} className="flex items-center gap-1 hover:text-primary">Program ID <ArrowUpDown size={12} /></button></th>
+                  <th><button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:text-primary">Program Name <ArrowUpDown size={12} /></button></th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map(r => (
+                  <tr key={r.id}>
+                    <td className="font-mono text-xs">{r.id}</td>
+                    <td>{r.name}</td>
+                    <td><span className={`px-2 py-0.5 rounded text-xs ${statusClass}`}>{status}</span></td>
+                    <td>
+                      <button onClick={() => removeRow(r.id)} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-destructive hover:bg-destructive/10">
+                        <Trash2 size={12} /> Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {pageRows.length === 0 && (
+                  <tr><td colSpan={4} className="text-center text-muted-foreground text-sm py-6">No matching records</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
+              <div className="flex gap-1">
+                <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-2.5 py-1 border border-input rounded disabled:opacity-40 hover:bg-muted">Prev</button>
+                <span className="px-2.5 py-1">{page} / {totalPages}</span>
+                <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="px-2.5 py-1 border border-input rounded disabled:opacity-40 hover:bg-muted">Next</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {rows.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-lg">
+          No programs uploaded yet. Use the upload button to add programs.
+        </p>
+      )}
+    </div>
+  );
+};
+
 export default CategoryManagementPage;
+
