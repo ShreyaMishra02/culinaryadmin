@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Search, RotateCcw, Pencil, Plus, ArrowLeft } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Search, RotateCcw, Pencil, Plus, ArrowLeft, Upload, Download, Trash2, ArrowUpDown } from "lucide-react";
+import * as XLSX from "xlsx";
+import { toast } from "@/hooks/use-toast";
 
 const mainCategories = [
   { id: 1, name: "Beverages", code: "BEV", active: true, region: "USA, EMEA", subcategories: ["Alcohol", "Coffee & Tea", "Mocktails", "Soda", "Smoothies"] },
