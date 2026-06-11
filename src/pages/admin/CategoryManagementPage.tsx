@@ -132,8 +132,8 @@ const CategoryEditForm = ({ category, onBack, onSave }: { category?: CategoryDat
     category?.region === "All" ? allRegions.filter(r => r !== "All") : (category?.region.split(", ") || ["USA"])
   );
   const [programVisibility, setProgramVisibility] = useState("all");
-  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
-  const [excludedPrograms, setExcludedPrograms] = useState<string[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<ProgramRow[]>([]);
+  const [excludedPrograms, setExcludedPrograms] = useState<ProgramRow[]>([]);
 
   const toggleRegion = (r: string) => {
     if (r === "All") {
@@ -143,9 +143,6 @@ const CategoryEditForm = ({ category, onBack, onSave }: { category?: CategoryDat
     setSelectedRegions(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
   };
 
-  const toggleProgram = (p: string, list: string[], setter: (v: string[]) => void) => {
-    setter(list.includes(p) ? list.filter(x => x !== p) : [...list, p]);
-  };
 
   return (
     <div className="animate-fade-in">
