@@ -221,31 +221,33 @@ const CategoryEditForm = ({ category, onBack, onSave }: { category?: CategoryDat
             <input type="radio" name="prog" checked={programVisibility === "selected"} onChange={() => setProgramVisibility("selected")} className="accent-primary" />
             Selected Programs
           </label>
-          {programVisibility === "selected" && (
-            <div className="ml-6 flex flex-wrap gap-2">
-              {programs.map(p => (
-                <button key={p} onClick={() => toggleProgram(p, selectedPrograms, setSelectedPrograms)}
-                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${selectedPrograms.includes(p) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"}`}
-                >
-                  {selectedPrograms.includes(p) ? "☑" : "☐"} {p}
-                </button>
-              ))}
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2 mt-3">Excluded Programs</label>
-            <div className="flex flex-wrap gap-2">
-              {programs.map(p => (
-                <button key={p} onClick={() => toggleProgram(p, excludedPrograms, setExcludedPrograms)}
-                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${excludedPrograms.includes(p) ? "bg-destructive text-destructive-foreground border-destructive" : "border-input hover:bg-accent"}`}
-                >
-                  {excludedPrograms.includes(p) ? "☑" : "☐"} {p}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
+
+      {programVisibility === "selected" && (
+        <ProgramUploadSection
+          title="Included Programs"
+          status="Included"
+          statusClass="bg-success/15 text-success"
+          rows={selectedPrograms}
+          setRows={setSelectedPrograms}
+          uploadLabel="Upload Included Programs"
+          sampleRows={[["P1001","Program Alpha"],["P1002","Program Beta"],["P1003","Program Gamma"]]}
+          sampleName="included_programs_template"
+        />
+      )}
+
+      <ProgramUploadSection
+        title="Excluded Programs"
+        status="Excluded"
+        statusClass="bg-destructive/15 text-destructive"
+        rows={excludedPrograms}
+        setRows={setExcludedPrograms}
+        uploadLabel="Upload Excluded Programs"
+        sampleRows={[["P2001","Program Delta"],["P2002","Program Epsilon"]]}
+        sampleName="excluded_programs_template"
+      />
+
 
       {/* Buttons */}
       <div className="flex justify-end gap-3">
