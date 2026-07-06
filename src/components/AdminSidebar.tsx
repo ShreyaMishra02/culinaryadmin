@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, FolderTree, Package, Settings2,
-  Upload, Star, Eye, Image, Megaphone, MousePointerClick, ImageIcon, Mail,
+  Upload, Star, Eye, Megaphone, MousePointerClick, ImageIcon, Mail,
   HelpCircle, FileText, Shield, Cookie, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
