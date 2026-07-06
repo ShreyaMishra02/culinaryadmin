@@ -20,7 +20,7 @@ import BackgroundImagesPage from "./pages/admin/BackgroundImagesPage";
 import BulkUploadPage from "./pages/admin/BulkUploadPage";
 import PopularProductsPage from "./pages/admin/PopularProductsPage";
 import ShowcaseProductsPage from "./pages/admin/ShowcaseProductsPage";
-import ProductBannerPage from "./pages/admin/ProductBannerPage";
+
 import PromoBannerPage from "./pages/admin/PromoBannerPage";
 import BannerCardDefinitionPage from "./pages/admin/BannerCardDefinitionPage";
 import NotFound from "./pages/NotFound";
