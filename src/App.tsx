@@ -46,7 +46,7 @@ const AppRoutes = () => {
         <Route path="bulk-upload" element={<BulkUploadPage />} />
         <Route path="popular-products" element={<PopularProductsPage />} />
         <Route path="showcase-products" element={<ShowcaseProductsPage />} />
-        <Route path="product-banners" element={<ProductBannerPage />} />
+        
         <Route path="promo-banners" element={<PromoBannerPage />} />
         <Route path="banner-card-definition" element={<BannerCardDefinitionPage />} />
         <Route path="background-images" element={<BackgroundImagesPage />} />
