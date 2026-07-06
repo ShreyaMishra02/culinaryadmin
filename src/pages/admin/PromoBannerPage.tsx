@@ -1,25 +1,36 @@
-import { useState } from "react";
-import { Plus, Pencil, ArrowLeft } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Pencil, ArrowLeft, Search, X, Check } from "lucide-react";
+import RichTextEditor from "@/components/RichTextEditor";
 
-const allRegions = ["USA", "Canada", "EMEA", "India", "APAC", "Latin America", "China", "Oceania"];
-const displayPages = ["Home", "Beverages", "Restaurants", "Order In", "Meal Kits", "Goodies", "Grocery"];
-const templateTypes = [
-  "Image Right, Content Left",
-  "Image Left, Content Right",
-  "Image Background, Content Left",
-  "Image Background, Content Right",
-  "Image Background, Content Center",
+const regionList = [
+  { name: "Australia & Pacific", code: "APAC" },
+  { name: "Canada", code: "CA" },
+  { name: "Europe, Middle East & Africa", code: "EMEA" },
+  { name: "Greater China", code: "GC" },
+  { name: "India", code: "IND" },
+  { name: "Latin America", code: "LATAM" },
+  { name: "North Asia", code: "NA" },
+  { name: "Southeast Asia", code: "SEA" },
+  { name: "United States", code: "USA" },
 ];
 
+const displayPages = ["Home", "Beverages", "Restaurants", "Order In", "Meal Kits", "Goodies", "Grocery"];
+const templateTypes = ["Image Right, Content Left", "Image Left, Content Right"] as const;
+type TemplateType = typeof templateTypes[number];
+
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const languages = ["English", "French", "Spanish", "German", "Italian", "Portuguese", "Chinese", "Japanese"];
+
 const mockBanners = [
-  { id: 1, name: "Spring Promo", template: "Image Right, Content Left", active: true, rank: 1 },
-  { id: 2, name: "Welcome Banner", template: "Image Background, Content Center", active: true, rank: 2 },
-  { id: 3, name: "Holiday Deal", template: "Image Left, Content Right", active: false, rank: 3 },
+  { id: 1, name: "Spring Promo", template: "Image Right, Content Left" as TemplateType, active: true, rank: 1 },
+  { id: 2, name: "Welcome Banner", template: "Image Left, Content Right" as TemplateType, active: true, rank: 2 },
+  { id: 3, name: "Holiday Deal", template: "Image Right, Content Left" as TemplateType, active: false, rank: 3 },
 ];
 
 const inputCls = "w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30";
-const labelCls = "block text-sm font-medium text-foreground mb-1";
+const labelCls = "block text-sm font-medium text-foreground mb-1.5";
 
+/* ------------------------------- List Page ------------------------------- */
 const PromoBannerPage = () => {
   const [editing, setEditing] = useState<number | null>(null);
 
@@ -67,117 +78,451 @@ const PromoBannerPage = () => {
   );
 };
 
-const PromoEditForm = ({ banner, onBack }: { banner?: any; onBack: () => void }) => {
-  const [selectedRegions, setSelectedRegions] = useState<string[]>(["USA"]);
-  const [selectedPages, setSelectedPages] = useState<string[]>(["Home"]);
-  const [days, setDays] = useState<string[]>([]);
-  const [langTab, setLangTab] = useState("English");
+/* --------------------------- Translation Modal --------------------------- */
+interface TranslationModalProps {
+  open: boolean;
+  title: string;
+  translations: Record<string, string>;
+  onChange: (lang: string, html: string) => void;
+  onClose: () => void;
+}
 
-  const toggleRegion = (r: string) => setSelectedRegions(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
-  const togglePage = (p: string) => setSelectedPages(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
-  const toggleDay = (d: string) => setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
+const TranslationModal = ({ open, title, translations, onChange, onClose }: TranslationModalProps) => {
+  const [activeLang, setActiveLang] = useState(languages[0]);
+  if (!open) return null;
+
+  const translateAll = () => {
+    // Placeholder: in real impl would call translation API.
+    const source = translations[languages[0]] || "";
+    languages.slice(1).forEach(l => {
+      if (!translations[l]) onChange(l, source);
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
+            <h3 className="font-heading font-semibold text-foreground">Translate: {title}</h3>
+            <p className="text-xs text-muted-foreground">Manage translations for each supported language</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={translateAll} className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-md hover:opacity-90">Translate All</button>
+            <button onClick={onClose} className="p-1.5 rounded-md hover:bg-accent"><X size={16} /></button>
+          </div>
+        </div>
+        <div className="flex gap-2 px-5 pt-3 border-b border-border overflow-x-auto">
+          {languages.map(l => (
+            <button
+              key={l}
+              onClick={() => setActiveLang(l)}
+              className={`px-3 py-2 text-xs whitespace-nowrap border-b-2 transition-colors ${
+                activeLang === l ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        <div className="p-5 overflow-y-auto flex-1">
+          <label className={labelCls}>Content ({activeLang})</label>
+          <RichTextEditor
+            value={translations[activeLang] || ""}
+            onChange={(html) => onChange(activeLang, html)}
+            minHeight={200}
+          />
+        </div>
+        <div className="px-5 py-3 border-t border-border flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Done</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ------------------------------- Edit Form ------------------------------- */
+const PromoEditForm = ({ banner, onBack }: { banner?: any; onBack: () => void }) => {
+  const [name, setName] = useState(banner?.name || "");
+  const [template, setTemplate] = useState<TemplateType>(banner?.template || templateTypes[0]);
+  const [imageUrl, setImageUrl] = useState("");
+  const [bannerText, setBannerText] = useState("<p>A name that focuses on personal growth and reflection that travel can inspire.</p>");
+  const [buttonLabel, setButtonLabel] = useState("<p>Shop Now</p>");
+  const [buttonAlign, setButtonAlign] = useState<"left" | "center" | "right">("left");
+  const [bgColor, setBgColor] = useState("#f4f6fa");
+  const [textBgColor, setTextBgColor] = useState("#ffffff");
+  const [active, setActive] = useState(banner?.active ?? true);
+  const [rank, setRank] = useState<number>(banner?.rank || 1);
+
+  // Multi-selects
+  const [selectedPages, setSelectedPages] = useState<string[]>(["Home"]);
+  const [pageSearch, setPageSearch] = useState("");
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(["USA"]);
+  const [regionSearch, setRegionSearch] = useState("");
+
+  // Timing
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [days, setDays] = useState<string[]>([]);
+
+  // Translations
+  const [textTranslations, setTextTranslations] = useState<Record<string, string>>({});
+  const [labelTranslations, setLabelTranslations] = useState<Record<string, string>>({});
+  const [translateTarget, setTranslateTarget] = useState<null | "text" | "label">(null);
+
+  // Errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const filteredPages = useMemo(
+    () => displayPages.filter(p => p.toLowerCase().includes(pageSearch.toLowerCase())),
+    [pageSearch]
+  );
+  const filteredRegions = useMemo(
+    () => regionList.filter(r => r.name.toLowerCase().includes(regionSearch.toLowerCase()) || r.code.toLowerCase().includes(regionSearch.toLowerCase())),
+    [regionSearch]
+  );
+
+  const toggle = <T,>(arr: T[], setter: (v: T[]) => void, value: T) =>
+    setter(arr.includes(value) ? arr.filter(x => x !== value) : [...arr, value]);
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!name.trim()) e.name = "Banner Name is required";
+    if (!imageUrl.trim()) e.imageUrl = "Image URL is required";
+    else {
+      try { new URL(imageUrl); } catch { e.imageUrl = "Enter a valid URL"; }
+    }
+    if (selectedPages.length === 0) e.pages = "At least one Display Page is required";
+    if (selectedRegions.length === 0) e.regions = "At least one Region is required";
+    if (startDate && endDate) {
+      const s = new Date(`${startDate}T${startTime || "00:00"}`);
+      const en = new Date(`${endDate}T${endTime || "23:59"}`);
+      if (en < s) e.date = "End Date/Time cannot be earlier than Start Date/Time";
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSave = () => { if (validate()) onBack(); };
+
+  const setDayQuick = (kind: "weekdays" | "weekends" | "everyday") => {
+    if (kind === "weekdays") setDays(daysOfWeek.slice(0, 5));
+    else if (kind === "weekends") setDays(daysOfWeek.slice(5));
+    else setDays(daysOfWeek);
+  };
+
+  const hasButton = buttonLabel.replace(/<[^>]*>/g, "").trim().length > 0;
 
   return (
     <div className="animate-fade-in">
       <div className="page-header">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-primary hover:underline mb-2"><ArrowLeft size={15} /> Back to Banners</button>
-        <h1 className="page-title">{banner ? "Edit Promotional Banner" : "New Promotional Banner"}</h1>
-      </div>
-
-      <div className="admin-card mb-4">
-        <h3 className="font-heading font-semibold text-foreground mb-4">Banner Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className={labelCls}>Banner Name</label><input className={inputCls} defaultValue={banner?.name || ""} /></div>
-          <div><label className={labelCls}>Template Type</label>
-            <select className={inputCls} defaultValue={banner?.template}>
-              {templateTypes.map(t => <option key={t}>{t}</option>)}
-            </select>
-          </div>
+        <div className="flex items-center justify-between">
           <div>
-            <label className={labelCls}>Background Image</label>
-            <div className="border-2 border-dashed border-input rounded-lg p-6 text-center text-muted-foreground text-sm cursor-pointer hover:border-primary/50 transition-colors">Upload image</div>
+            <h1 className="page-title">{banner ? "Edit Promotional Banner" : "New Promotional Banner"}</h1>
+            <p className="page-subtitle">Configure banner content, targeting, and schedule</p>
           </div>
-          <div><label className={labelCls}>Content Text</label><textarea className={`${inputCls} min-h-[80px]`} placeholder="Rich content..." /></div>
-          <div><label className={labelCls}>Font Family</label>
-            <select className={inputCls}><option>Inter</option><option>Arial</option><option>Georgia</option><option>Verdana</option></select>
-          </div>
-          <div><label className={labelCls}>Font Size</label><input className={inputCls} type="number" defaultValue={16} /></div>
-          <div><label className={labelCls}>Font Color</label><input className={inputCls} type="color" defaultValue="#ffffff" /></div>
-          <div><label className={labelCls}>Button Label</label><input className={inputCls} placeholder="Shop Now" /></div>
-          <div><label className={labelCls}>Button Link</label><input className={inputCls} placeholder="https://..." /></div>
-          <div><label className={labelCls}>Banner Rank (1–50)</label><input className={inputCls} type="number" defaultValue={banner?.rank || 1} min={1} max={50} /></div>
         </div>
       </div>
 
-      {/* Display Pages */}
-      <div className="admin-card mb-4">
-        <h3 className="font-heading font-semibold text-foreground mb-4">Display Pages</h3>
-        <div className="flex flex-wrap gap-2">
-          {displayPages.map(p => (
-            <button key={p} onClick={() => togglePage(p)}
-              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${selectedPages.includes(p) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"}`}>
-              {selectedPages.includes(p) ? "☑" : "☐"} {p}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Region */}
-      <div className="admin-card mb-4">
-        <h3 className="font-heading font-semibold text-foreground mb-4">Region Selection</h3>
-        <div className="flex flex-wrap gap-2">
-          {allRegions.map(r => (
-            <button key={r} onClick={() => toggleRegion(r)}
-              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${selectedRegions.includes(r) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"}`}>
-              {selectedRegions.includes(r) ? "☑" : "☐"} {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Recurring Timing */}
-      <div className="admin-card mb-4">
-        <h3 className="font-heading font-semibold text-foreground mb-4">Recurring Timing</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className={labelCls}>Days of Week</label>
-            <div className="flex flex-wrap gap-2">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
-                <button key={d} onClick={() => toggleDay(d)}
-                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${days.includes(d) ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"}`}>{d}</button>
-              ))}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {/* -------------------- FORM COLUMNS -------------------- */}
+        <div className="xl:col-span-2 space-y-4">
+          {/* Banner Information */}
+          <div className="admin-card">
+            <h3 className="font-heading font-semibold text-foreground mb-4">Banner Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Banner Name <span className="text-destructive">*</span></label>
+                <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
+                {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+              </div>
+              <div>
+                <label className={labelCls}>Rank</label>
+                <input className={inputCls} type="number" min={1} value={rank} onChange={(e) => setRank(Number(e.target.value))} />
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelCls}>Template Type</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {templateTypes.map(t => (
+                    <label
+                      key={t}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors ${
+                        template === t ? "border-primary bg-primary/5 text-primary" : "border-input hover:bg-accent"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="template"
+                        className="accent-primary"
+                        checked={template === t}
+                        onChange={() => setTemplate(t)}
+                      />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelCls}>Image URL <span className="text-destructive">*</span></label>
+                <input
+                  className={inputCls}
+                  placeholder="https://cdn.example.com/banner.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                />
+                {errors.imageUrl && <p className="text-xs text-destructive mt-1">{errors.imageUrl}</p>}
+              </div>
             </div>
           </div>
-          <div><label className={labelCls}>Start Time</label><input className={inputCls} type="time" /></div>
-          <div><label className={labelCls}>End Time</label><input className={inputCls} type="time" /></div>
+
+          {/* Banner Text */}
+          <div className="admin-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-heading font-semibold text-foreground">Banner Text</h3>
+            </div>
+            <RichTextEditor
+              value={bannerText}
+              onChange={setBannerText}
+              onTranslate={() => setTranslateTarget("text")}
+              minHeight={180}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className={labelCls}>Background Color</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="h-10 w-14 rounded border border-input" />
+                  <input value={bgColor} onChange={(e) => setBgColor(e.target.value)} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Text Area Background Color</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={textBgColor} onChange={(e) => setTextBgColor(e.target.value)} className="h-10 w-14 rounded border border-input" />
+                  <input value={textBgColor} onChange={(e) => setTextBgColor(e.target.value)} className={inputCls} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="admin-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-heading font-semibold text-foreground">CTA (Button)</h3>
+              <span className="text-xs text-muted-foreground">Leave label empty to hide the button</span>
+            </div>
+            <label className={labelCls}>Button Label</label>
+            <RichTextEditor
+              value={buttonLabel}
+              onChange={setButtonLabel}
+              onTranslate={() => setTranslateTarget("label")}
+              minHeight={120}
+            />
+            <div className="mt-4">
+              <label className={labelCls}>Button Alignment</label>
+              <div className="inline-flex rounded-lg border border-input overflow-hidden">
+                {(["left", "center", "right"] as const).map(a => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => setButtonAlign(a)}
+                    className={`px-4 py-2 text-sm capitalize transition-colors ${
+                      buttonAlign === a ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Display Pages */}
+          <div className="admin-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-heading font-semibold text-foreground">Display Pages</h3>
+              <div className="flex gap-2 text-xs">
+                <button onClick={() => setSelectedPages([...displayPages])} className="text-primary hover:underline">Select All</button>
+                <span className="text-muted-foreground">·</span>
+                <button onClick={() => setSelectedPages([])} className="text-muted-foreground hover:underline">Clear All</button>
+              </div>
+            </div>
+            <div className="relative mb-3">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className={`${inputCls} pl-9`}
+                placeholder="Search pages..."
+                value={pageSearch}
+                onChange={(e) => setPageSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filteredPages.map(p => {
+                const on = selectedPages.includes(p);
+                return (
+                  <button
+                    key={p}
+                    onClick={() => toggle(selectedPages, setSelectedPages, p)}
+                    className={`px-3 py-1.5 rounded-full text-xs border inline-flex items-center gap-1.5 transition-colors ${
+                      on ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"
+                    }`}
+                  >
+                    {on && <Check size={12} />} {p}
+                  </button>
+                );
+              })}
+            </div>
+            {errors.pages && <p className="text-xs text-destructive mt-2">{errors.pages}</p>}
+          </div>
+
+          {/* Region */}
+          <div className="admin-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-heading font-semibold text-foreground">Region Selection</h3>
+              <div className="flex gap-2 text-xs">
+                <button onClick={() => setSelectedRegions(regionList.map(r => r.code))} className="text-primary hover:underline">Select All</button>
+                <span className="text-muted-foreground">·</span>
+                <button onClick={() => setSelectedRegions([])} className="text-muted-foreground hover:underline">Clear All</button>
+              </div>
+            </div>
+            <div className="relative mb-3">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className={`${inputCls} pl-9`}
+                placeholder="Search regions..."
+                value={regionSearch}
+                onChange={(e) => setRegionSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filteredRegions.map(r => {
+                const on = selectedRegions.includes(r.code);
+                return (
+                  <button
+                    key={r.code}
+                    onClick={() => toggle(selectedRegions, setSelectedRegions, r.code)}
+                    className={`px-3 py-1.5 rounded-full text-xs border inline-flex items-center gap-1.5 transition-colors ${
+                      on ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"
+                    }`}
+                  >
+                    {on && <Check size={12} />} {r.name} <span className="opacity-70">({r.code})</span>
+                  </button>
+                );
+              })}
+            </div>
+            {errors.regions && <p className="text-xs text-destructive mt-2">{errors.regions}</p>}
+          </div>
+
+          {/* Timing */}
+          <div className="admin-card">
+            <h3 className="font-heading font-semibold text-foreground mb-4">Banner Timing</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div><label className={labelCls}>Start Date</label><input className={inputCls} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+              <div><label className={labelCls}>Start Time</label><input className={inputCls} type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} /></div>
+              <div><label className={labelCls}>End Date</label><input className={inputCls} type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+              <div><label className={labelCls}>End Time</label><input className={inputCls} type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} /></div>
+            </div>
+            {errors.date && <p className="text-xs text-destructive mb-3">{errors.date}</p>}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={`${labelCls} mb-0`}>Days of Week</label>
+                <div className="flex gap-2 text-xs">
+                  <button onClick={() => setDayQuick("weekdays")} className="text-primary hover:underline">Weekdays</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button onClick={() => setDayQuick("weekends")} className="text-primary hover:underline">Weekends</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button onClick={() => setDayQuick("everyday")} className="text-primary hover:underline">Everyday</button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {daysOfWeek.map(d => {
+                  const on = days.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => toggle(days, setDays, d)}
+                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                        on ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-accent"
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Active */}
+          <div className="admin-card">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="accent-primary" /> Active
+            </label>
+          </div>
+        </div>
+
+        {/* -------------------- LIVE PREVIEW -------------------- */}
+        <div className="xl:col-span-1">
+          <div className="admin-card sticky top-16">
+            <h3 className="font-heading font-semibold text-foreground mb-3">Live Preview</h3>
+            <div className="rounded-lg overflow-hidden border border-border" style={{ backgroundColor: bgColor }}>
+              <div className={`flex flex-col ${template === "Image Left, Content Right" ? "md:flex-row-reverse" : "md:flex-row"}`}>
+                <div className="md:w-1/2 aspect-video md:aspect-auto bg-muted flex items-center justify-center overflow-hidden">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="" className="w-full h-full object-cover" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground p-4">Image preview</span>
+                  )}
+                </div>
+                <div className="md:w-1/2 p-5 flex flex-col justify-center gap-3" style={{ backgroundColor: textBgColor }}>
+                  <div className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: bannerText }} />
+                  {hasButton && (
+                    <div
+                      className="flex mt-2"
+                      style={{ justifyContent: buttonAlign === "left" ? "flex-start" : buttonAlign === "right" ? "flex-end" : "center" }}
+                    >
+                      <button
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium"
+                        dangerouslySetInnerHTML={{ __html: buttonLabel }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">Preview updates automatically as you edit.</p>
+          </div>
         </div>
       </div>
 
-      {/* Translation */}
-      <div className="admin-card mb-4">
-        <h3 className="font-heading font-semibold text-foreground mb-4">Translation</h3>
-        <div className="flex gap-2 mb-4 border-b border-border">
-          {["English", "French", "Spanish", "German"].map(lang => (
-            <button key={lang} onClick={() => setLangTab(lang)}
-              className={`px-4 py-2 text-sm border-b-2 transition-colors ${langTab === lang ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-              {lang}
-            </button>
-          ))}
-        </div>
-        <div className="space-y-3">
-          <div><label className={labelCls}>Content ({langTab})</label><textarea className={`${inputCls} min-h-[60px]`} /></div>
-          <div><label className={labelCls}>Button Label ({langTab})</label><input className={inputCls} /></div>
-        </div>
-      </div>
-
-      <div className="admin-card mb-4">
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" defaultChecked={banner?.active} className="accent-primary" /> Active</label>
-      </div>
-
-      <div className="flex justify-end gap-3">
+      {/* Actions */}
+      <div className="flex justify-end gap-3 mt-6">
         <button onClick={onBack} className="px-6 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Cancel</button>
-        <button onClick={onBack} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Save</button>
+        <button onClick={handleSave} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Save</button>
       </div>
+
+      <TranslationModal
+        open={translateTarget === "text"}
+        title="Banner Text"
+        translations={{ English: bannerText, ...textTranslations }}
+        onChange={(lang, html) => {
+          if (lang === "English") setBannerText(html);
+          else setTextTranslations(prev => ({ ...prev, [lang]: html }));
+        }}
+        onClose={() => setTranslateTarget(null)}
+      />
+      <TranslationModal
+        open={translateTarget === "label"}
+        title="Button Label"
+        translations={{ English: buttonLabel, ...labelTranslations }}
+        onChange={(lang, html) => {
+          if (lang === "English") setButtonLabel(html);
+          else setLabelTranslations(prev => ({ ...prev, [lang]: html }));
+        }}
+        onClose={() => setTranslateTarget(null)}
+      />
     </div>
   );
 };
