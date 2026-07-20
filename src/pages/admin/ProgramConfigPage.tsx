@@ -419,27 +419,29 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk, onSave }: { program: Pro
   );
 };
 
-/* ── Exclusion list (multi-select with search / select all / clear) ── */
+/* ── Inclusion list (checked = included; unchecked = excluded) ── */
 
-const ExclusionList = ({
-  title, options, selected, onChange, lockedItems = [],
-}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void; lockedItems?: string[] }) => {
+const InclusionList = ({
+  title, options, selected, onChange, lockedOffItems = [],
+}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void; lockedOffItems?: string[] }) => {
   const [q, setQ] = useState("");
   const sorted = useMemo(() => [...options].sort((a, b) => a.localeCompare(b)), [options]);
   const filtered = useMemo(() => sorted.filter(o => o.toLowerCase().includes(q.toLowerCase())), [sorted, q]);
 
   const toggle = (item: string) => {
-    if (lockedItems.includes(item)) return;
+    if (lockedOffItems.includes(item)) return;
     const next = selected.includes(item) ? selected.filter(x => x !== item) : [...selected, item];
-    onChange(next.filter(x => !lockedItems.includes(x)));
+    onChange(next.filter(x => !lockedOffItems.includes(x)));
   };
-  const selectAll = () => onChange(Array.from(new Set([...filtered, ...selected])).filter(x => !lockedItems.includes(x)));
+  const selectAll = () => onChange(options.filter(x => !lockedOffItems.includes(x)));
   const clear = () => onChange([]);
 
   return (
     <div className="border border-border rounded-lg p-3 bg-background">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-medium">{title} <span className="text-xs text-muted-foreground">({selected.length})</span></div>
+        <div className="text-sm font-medium">
+          {title} <span className="text-xs text-muted-foreground">({selected.length} of {options.length} included)</span>
+        </div>
         <div className="flex gap-2 text-xs">
           <button type="button" onClick={selectAll} className="text-primary hover:underline">Select all</button>
           <button type="button" onClick={clear} className="text-muted-foreground hover:underline">Clear</button>
@@ -451,23 +453,24 @@ const ExclusionList = ({
       </div>
       <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
         {filtered.map(opt => {
-          const locked = lockedItems.includes(opt);
+          const locked = lockedOffItems.includes(opt);
           return (
             <label key={opt} className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${locked ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"}`}>
               <input
                 type="checkbox"
-                checked={selected.includes(opt)}
+                checked={!locked && selected.includes(opt)}
                 disabled={locked}
                 onChange={() => toggle(opt)}
                 className="accent-primary w-3.5 h-3.5"
               />
               <span>{opt}</span>
-              {locked && <span className="ml-auto text-[10px] text-muted-foreground">Auto</span>}
+              {locked && <span className="ml-auto text-[10px] text-muted-foreground">Auto-off</span>}
             </label>
           );
         })}
         {filtered.length === 0 && <div className="text-xs text-muted-foreground px-2 py-3 text-center">No results</div>}
       </div>
+
     </div>
   );
 };
