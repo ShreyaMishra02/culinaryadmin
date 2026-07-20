@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { ArrowLeft, Search, Upload, Download, X, FileSpreadsheet, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Search, Upload, Download, X, FileSpreadsheet, CheckCircle2, AlertTriangle, Plus } from "lucide-react";
 
 const inputCls = "w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30";
 const labelCls = "block text-sm font-medium text-foreground mb-1";
@@ -34,30 +34,83 @@ type Program = {
   includedGiftCards: string[];
 };
 
-const samplePrograms: Program[] = [
+const initialPrograms: Program[] = [
   { number: "PG-001", name: "Rewards Plus", alcoholEnabled: false, giftCardEnabled: true, excludedCategories: ["Grocery"], excludedSubcategories: [], excludedBrands: [], excludedSuppliers: [], includedGiftCards: [...GIFT_CARDS] },
   { number: "PG-002", name: "Corporate Perks", alcoholEnabled: true, giftCardEnabled: false, excludedCategories: [], excludedSubcategories: ["Fast Food"], excludedBrands: ["BrandX"], excludedSuppliers: [], includedGiftCards: [] },
   { number: "PG-003", name: "Employee Benefits", alcoholEnabled: false, giftCardEnabled: false, excludedCategories: [], excludedSubcategories: [], excludedBrands: [], excludedSuppliers: ["Supplier A"], includedGiftCards: [] },
   { number: "PG-004", name: "Partner Network", alcoholEnabled: true, giftCardEnabled: true, excludedCategories: ["Beverages", "Goodies"], excludedSubcategories: [], excludedBrands: [], excludedSuppliers: [], includedGiftCards: ["Amazon eGift Card", "Starbucks eGift Card"] },
 ];
 
+/* Full list of active programs available in the system (union of configured + unconfigured). */
+const ALL_PROGRAMS: { number: string; name: string }[] = [
+  { number: "PG-001", name: "Rewards Plus" },
+  { number: "PG-002", name: "Corporate Perks" },
+  { number: "PG-003", name: "Employee Benefits" },
+  { number: "PG-004", name: "Partner Network" },
+  { number: "PG-005", name: "Executive Circle" },
+  { number: "PG-006", name: "Sales Incentive Club" },
+  { number: "PG-007", name: "Wellness Rewards" },
+  { number: "PG-008", name: "Milestone Recognition" },
+  { number: "PG-009", name: "Holiday Appreciation" },
+  { number: "PG-010", name: "Referral Bonus" },
+];
+
 const ProgramConfigPage = () => {
+  const [programs, setPrograms] = useState<Program[]>(initialPrograms);
   const [editing, setEditing] = useState<Program | null>(null);
   const [searchNumber, setSearchNumber] = useState("");
   const [searchName, setSearchName] = useState("");
-  const [filtered, setFiltered] = useState<Program[]>(samplePrograms);
   const [showBulk, setShowBulk] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [msg, setMsg] = useState<{ type: "success" | "warning"; text: string } | null>(null);
 
-  const handleSearch = () => {
-    setFiltered(samplePrograms.filter(p =>
-      (!searchNumber || p.number.toLowerCase().includes(searchNumber.toLowerCase())) &&
-      (!searchName || p.name.toLowerCase().includes(searchName.toLowerCase()))
-    ));
+  const filtered = useMemo(() => programs.filter(p =>
+    (!searchNumber || p.number.toLowerCase().includes(searchNumber.toLowerCase())) &&
+    (!searchName || p.name.toLowerCase().includes(searchName.toLowerCase()))
+  ), [programs, searchNumber, searchName]);
+
+  const handleSaveEdit = (updated: Program) => {
+    setPrograms(prev => prev.map(p => p.number === updated.number ? updated : p));
+  };
+
+  const handleAdd = (programNumber: string) => {
+    const meta = ALL_PROGRAMS.find(p => p.number === programNumber);
+    if (!meta) return;
+    if (programs.some(p => p.number === programNumber)) {
+      setMsg({ type: "warning", text: "A configuration already exists for the selected Program." });
+      setTimeout(() => setMsg(null), 4000);
+      return;
+    }
+    const created: Program = {
+      number: meta.number,
+      name: meta.name,
+      alcoholEnabled: false,
+      giftCardEnabled: false,
+      excludedCategories: [],
+      excludedSubcategories: [],
+      excludedBrands: [],
+      excludedSuppliers: [],
+      includedGiftCards: [...GIFT_CARDS],
+    };
+    setPrograms(prev => [created, ...prev]);
+    setShowAdd(false);
+    setMsg({ type: "success", text: `Configuration created for ${meta.number} – ${meta.name}.` });
+    setTimeout(() => setMsg(null), 4000);
   };
 
   if (editing) {
-    return <ProgramEditPage program={editing} onBack={() => setEditing(null)} onOpenBulk={() => setShowBulk(true)} />;
+    return (
+      <ProgramEditPage
+        program={editing}
+        onBack={() => setEditing(null)}
+        onOpenBulk={() => setShowBulk(true)}
+        onSave={handleSaveEdit}
+      />
+    );
   }
+
+  const configuredNumbers = new Set(programs.map(p => p.number));
+  const availableToAdd = ALL_PROGRAMS.filter(p => !configuredNumbers.has(p.number));
 
   return (
     <div className="animate-fade-in">
@@ -66,10 +119,22 @@ const ProgramConfigPage = () => {
           <h1 className="page-title">Program Configuration</h1>
           <p className="page-subtitle">Manage program-level product visibility and gift card availability</p>
         </div>
-        <button onClick={() => setShowBulk(true)} className="flex items-center gap-1.5 px-4 py-2 border border-input rounded-lg text-sm font-medium hover:bg-muted">
-          <Upload size={14} /> Bulk Upload Configuration
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setShowBulk(true)} className="flex items-center gap-1.5 px-4 py-2 border border-input rounded-lg text-sm font-medium hover:bg-muted">
+            <Upload size={14} /> Bulk Upload Configuration
+          </button>
+          <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">
+            <Plus size={14} /> Add Configuration
+          </button>
+        </div>
       </div>
+
+      {msg && (
+        <div className={`mb-4 admin-card flex items-start gap-2 border-l-4 ${msg.type === "success" ? "border-l-green-500" : "border-l-yellow-500"}`}>
+          {msg.type === "success" ? <CheckCircle2 className="text-green-600 shrink-0" size={18} /> : <AlertTriangle className="text-yellow-600 shrink-0" size={18} />}
+          <span className="text-sm">{msg.text}</span>
+        </div>
+      )}
 
       <div className="admin-card mb-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
@@ -82,10 +147,10 @@ const ProgramConfigPage = () => {
             <input className={inputCls} placeholder="Search by name..." value={searchName} onChange={e => setSearchName(e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSearch} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">
+            <button onClick={() => { /* filtering is live */ }} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">
               <Search size={14} /> Search
             </button>
-            <button onClick={() => { setSearchNumber(""); setSearchName(""); setFiltered(samplePrograms); }} className="px-4 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Reset</button>
+            <button onClick={() => { setSearchNumber(""); setSearchName(""); }} className="px-4 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Reset</button>
           </div>
         </div>
       </div>
@@ -116,11 +181,101 @@ const ProgramConfigPage = () => {
                 </tr>
               );
             })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="text-center text-xs text-muted-foreground py-6">No program configurations match your search.</td></tr>
+            )}
           </tbody>
         </table>
       </div>
 
       {showBulk && <BulkUploadModal onClose={() => setShowBulk(false)} />}
+      {showAdd && <AddConfigModal available={availableToAdd} onClose={() => setShowAdd(false)} onCreate={handleAdd} />}
+    </div>
+  );
+};
+
+/* ── Add configuration modal ── */
+
+const AddConfigModal = ({
+  available, onClose, onCreate,
+}: { available: { number: string; name: string }[]; onClose: () => void; onCreate: (n: string) => void }) => {
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<string>("");
+  const results = useMemo(
+    () => available.filter(p =>
+      p.number.toLowerCase().includes(q.toLowerCase()) || p.name.toLowerCase().includes(q.toLowerCase())
+    ),
+    [available, q]
+  );
+  const chosen = available.find(p => p.number === selected) || null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-foreground/40 flex items-center justify-center p-4">
+      <div className="bg-card rounded-lg shadow-lg w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <h2 className="text-base font-semibold">Add Program Configuration</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className={labelCls}>Select Program</label>
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-2.5 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={e => { setQ(e.target.value); setSelected(""); }}
+                placeholder="Search by number or name..."
+                className={`${inputCls} pl-8`}
+              />
+            </div>
+            <div className="mt-2 border border-border rounded-lg max-h-56 overflow-y-auto">
+              {results.length === 0 && (
+                <div className="text-xs text-muted-foreground px-3 py-6 text-center">
+                  {available.length === 0 ? "All active programs already have a configuration." : "No matching programs."}
+                </div>
+              )}
+              {results.map(p => (
+                <button
+                  key={p.number}
+                  type="button"
+                  onClick={() => setSelected(p.number)}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 flex items-center justify-between ${selected === p.number ? "bg-primary/10" : ""}`}
+                >
+                  <span className="font-medium">{p.number}</span>
+                  <span className="text-muted-foreground">{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {chosen && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Program Number</label>
+                <input className={`${inputCls} bg-muted`} value={chosen.number} readOnly />
+              </div>
+              <div>
+                <label className={labelCls}>Program Name</label>
+                <input className={`${inputCls} bg-muted`} value={chosen.name} readOnly />
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            The new configuration will start with Alcohol Products OFF, Gift Card Products OFF, and every Category, Subcategory, Brand, and Supplier included by default.
+          </p>
+        </div>
+        <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 border border-input rounded-lg text-sm hover:bg-muted">Cancel</button>
+          <button
+            disabled={!selected}
+            onClick={() => onCreate(selected)}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -134,21 +289,23 @@ const StatusDot = ({ on }: { on: boolean }) => (
 
 /* ── Edit page ── */
 
-const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; onBack: () => void; onOpenBulk: () => void }) => {
+const ProgramEditPage = ({ program, onBack, onOpenBulk, onSave }: { program: Program; onBack: () => void; onOpenBulk: () => void; onSave: (p: Program) => void }) => {
+  const diff = (all: string[], excluded: string[]) => all.filter(x => !excluded.includes(x));
+
   const [name, setName] = useState(program.name);
   const [alcoholEnabled, setAlcoholEnabled] = useState(program.alcoholEnabled);
   const [giftCardEnabled, setGiftCardEnabled] = useState(program.giftCardEnabled);
-  const [exCats, setExCats] = useState<string[]>(program.excludedCategories);
-  const [exSubs, setExSubs] = useState<string[]>(program.excludedSubcategories);
-  const [exBrands, setExBrands] = useState<string[]>(program.excludedBrands);
-  const [exSuppliers, setExSuppliers] = useState<string[]>(program.excludedSuppliers);
+  const [incCats, setIncCats] = useState<string[]>(diff(CATEGORIES, program.excludedCategories));
+  const [incSubs, setIncSubs] = useState<string[]>(diff(SUBCATEGORIES, program.excludedSubcategories));
+  const [incBrands, setIncBrands] = useState<string[]>(diff(BRANDS, program.excludedBrands));
+  const [incSuppliers, setIncSuppliers] = useState<string[]>(diff(SUPPLIERS, program.excludedSuppliers));
   const [incGiftCards, setIncGiftCards] = useState<string[]>(
     program.includedGiftCards.length ? program.includedGiftCards : [...GIFT_CARDS]
   );
   const [dirty, setDirty] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "warning"; text: string } | null>(null);
 
-  useEffect(() => { setDirty(true); }, [name, alcoholEnabled, giftCardEnabled, exCats, exSubs, exBrands, exSuppliers, incGiftCards]);
+  useEffect(() => { setDirty(true); }, [name, alcoholEnabled, giftCardEnabled, incCats, incSubs, incBrands, incSuppliers, incGiftCards]);
   useEffect(() => { setDirty(false); }, []);
 
   useEffect(() => {
@@ -162,17 +319,28 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
     onBack();
   };
 
+  // Alcohol subcategory forced excluded when Alcohol Products is OFF.
+  const effectiveIncSubs = useMemo(
+    () => alcoholEnabled ? incSubs : incSubs.filter(s => s !== "Alcohol"),
+    [alcoholEnabled, incSubs]
+  );
+
   const handleSave = () => {
+    onSave({
+      number: program.number,
+      name,
+      alcoholEnabled,
+      giftCardEnabled,
+      excludedCategories: diff(CATEGORIES, incCats),
+      excludedSubcategories: diff(SUBCATEGORIES, effectiveIncSubs),
+      excludedBrands: diff(BRANDS, incBrands),
+      excludedSuppliers: diff(SUPPLIERS, incSuppliers),
+      includedGiftCards: giftCardEnabled ? incGiftCards : [...GIFT_CARDS],
+    });
     setDirty(false);
     setMsg({ type: "success", text: `Program ${program.number} configuration saved successfully.` });
     setTimeout(() => setMsg(null), 4000);
   };
-
-  // Alcohol category visibility. Alcohol is a subcategory; if disabled, force-exclude it.
-  const effectiveExSubs = useMemo(
-    () => alcoholEnabled ? exSubs : Array.from(new Set([...exSubs, "Alcohol"])),
-    [alcoholEnabled, exSubs]
-  );
 
   return (
     <div className="animate-fade-in">
@@ -181,7 +349,7 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
           <ArrowLeft size={15} /> Back to Programs
         </button>
         <h1 className="page-title">{program.name} – {program.number}</h1>
-        <p className="page-subtitle">Configure product visibility using exclusions; gift cards use inclusions</p>
+        <p className="page-subtitle">Select the records that should be available for this program</p>
       </div>
 
       {msg && (
@@ -221,12 +389,12 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
 
         <div className="border-t border-border pt-4">
           <h3 className="text-sm font-semibold text-foreground mb-1">Product Configuration</h3>
-          <p className="text-xs text-muted-foreground mb-4">Select only the records to exclude. Anything not listed is automatically available (including future master data).</p>
+          <p className="text-xs text-muted-foreground mb-4">All active master data is listed below. Every record is selected by default; uncheck any you want to exclude from this program.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ExclusionList title="Excluded Categories" options={CATEGORIES} selected={exCats} onChange={setExCats} />
-            <ExclusionList title="Excluded Subcategories" options={SUBCATEGORIES} selected={effectiveExSubs} onChange={setExSubs} lockedItems={alcoholEnabled ? [] : ["Alcohol"]} />
-            <ExclusionList title="Excluded Brands" options={BRANDS} selected={exBrands} onChange={setExBrands} />
-            <ExclusionList title="Excluded Suppliers" options={SUPPLIERS} selected={exSuppliers} onChange={setExSuppliers} />
+            <InclusionList title="Categories" options={CATEGORIES} selected={incCats} onChange={setIncCats} />
+            <InclusionList title="Subcategories" options={SUBCATEGORIES} selected={effectiveIncSubs} onChange={setIncSubs} lockedOffItems={alcoholEnabled ? [] : ["Alcohol"]} />
+            <InclusionList title="Brands" options={BRANDS} selected={incBrands} onChange={setIncBrands} />
+            <InclusionList title="Suppliers" options={SUPPLIERS} selected={incSuppliers} onChange={setIncSuppliers} />
           </div>
         </div>
 
@@ -243,6 +411,7 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
         </button>
         <div className="flex gap-3">
           <button onClick={handleBack} className="px-6 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Cancel</button>
+
           <button onClick={handleSave} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Save</button>
         </div>
       </div>
@@ -250,27 +419,29 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
   );
 };
 
-/* ── Exclusion list (multi-select with search / select all / clear) ── */
+/* ── Inclusion list (checked = included; unchecked = excluded) ── */
 
-const ExclusionList = ({
-  title, options, selected, onChange, lockedItems = [],
-}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void; lockedItems?: string[] }) => {
+const InclusionList = ({
+  title, options, selected, onChange, lockedOffItems = [],
+}: { title: string; options: string[]; selected: string[]; onChange: (v: string[]) => void; lockedOffItems?: string[] }) => {
   const [q, setQ] = useState("");
   const sorted = useMemo(() => [...options].sort((a, b) => a.localeCompare(b)), [options]);
   const filtered = useMemo(() => sorted.filter(o => o.toLowerCase().includes(q.toLowerCase())), [sorted, q]);
 
   const toggle = (item: string) => {
-    if (lockedItems.includes(item)) return;
+    if (lockedOffItems.includes(item)) return;
     const next = selected.includes(item) ? selected.filter(x => x !== item) : [...selected, item];
-    onChange(next.filter(x => !lockedItems.includes(x)));
+    onChange(next.filter(x => !lockedOffItems.includes(x)));
   };
-  const selectAll = () => onChange(Array.from(new Set([...filtered, ...selected])).filter(x => !lockedItems.includes(x)));
+  const selectAll = () => onChange(options.filter(x => !lockedOffItems.includes(x)));
   const clear = () => onChange([]);
 
   return (
     <div className="border border-border rounded-lg p-3 bg-background">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-medium">{title} <span className="text-xs text-muted-foreground">({selected.length})</span></div>
+        <div className="text-sm font-medium">
+          {title} <span className="text-xs text-muted-foreground">({selected.length} of {options.length} included)</span>
+        </div>
         <div className="flex gap-2 text-xs">
           <button type="button" onClick={selectAll} className="text-primary hover:underline">Select all</button>
           <button type="button" onClick={clear} className="text-muted-foreground hover:underline">Clear</button>
@@ -282,23 +453,24 @@ const ExclusionList = ({
       </div>
       <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
         {filtered.map(opt => {
-          const locked = lockedItems.includes(opt);
+          const locked = lockedOffItems.includes(opt);
           return (
             <label key={opt} className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${locked ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"}`}>
               <input
                 type="checkbox"
-                checked={selected.includes(opt)}
+                checked={!locked && selected.includes(opt)}
                 disabled={locked}
                 onChange={() => toggle(opt)}
                 className="accent-primary w-3.5 h-3.5"
               />
               <span>{opt}</span>
-              {locked && <span className="ml-auto text-[10px] text-muted-foreground">Auto</span>}
+              {locked && <span className="ml-auto text-[10px] text-muted-foreground">Auto-off</span>}
             </label>
           );
         })}
         {filtered.length === 0 && <div className="text-xs text-muted-foreground px-2 py-3 text-center">No results</div>}
       </div>
+
     </div>
   );
 };
