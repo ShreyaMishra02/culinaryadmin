@@ -289,21 +289,23 @@ const StatusDot = ({ on }: { on: boolean }) => (
 
 /* ── Edit page ── */
 
-const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; onBack: () => void; onOpenBulk: () => void }) => {
+const ProgramEditPage = ({ program, onBack, onOpenBulk, onSave }: { program: Program; onBack: () => void; onOpenBulk: () => void; onSave: (p: Program) => void }) => {
+  const diff = (all: string[], excluded: string[]) => all.filter(x => !excluded.includes(x));
+
   const [name, setName] = useState(program.name);
   const [alcoholEnabled, setAlcoholEnabled] = useState(program.alcoholEnabled);
   const [giftCardEnabled, setGiftCardEnabled] = useState(program.giftCardEnabled);
-  const [exCats, setExCats] = useState<string[]>(program.excludedCategories);
-  const [exSubs, setExSubs] = useState<string[]>(program.excludedSubcategories);
-  const [exBrands, setExBrands] = useState<string[]>(program.excludedBrands);
-  const [exSuppliers, setExSuppliers] = useState<string[]>(program.excludedSuppliers);
+  const [incCats, setIncCats] = useState<string[]>(diff(CATEGORIES, program.excludedCategories));
+  const [incSubs, setIncSubs] = useState<string[]>(diff(SUBCATEGORIES, program.excludedSubcategories));
+  const [incBrands, setIncBrands] = useState<string[]>(diff(BRANDS, program.excludedBrands));
+  const [incSuppliers, setIncSuppliers] = useState<string[]>(diff(SUPPLIERS, program.excludedSuppliers));
   const [incGiftCards, setIncGiftCards] = useState<string[]>(
     program.includedGiftCards.length ? program.includedGiftCards : [...GIFT_CARDS]
   );
   const [dirty, setDirty] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "warning"; text: string } | null>(null);
 
-  useEffect(() => { setDirty(true); }, [name, alcoholEnabled, giftCardEnabled, exCats, exSubs, exBrands, exSuppliers, incGiftCards]);
+  useEffect(() => { setDirty(true); }, [name, alcoholEnabled, giftCardEnabled, incCats, incSubs, incBrands, incSuppliers, incGiftCards]);
   useEffect(() => { setDirty(false); }, []);
 
   useEffect(() => {
@@ -317,17 +319,28 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
     onBack();
   };
 
+  // Alcohol subcategory forced excluded when Alcohol Products is OFF.
+  const effectiveIncSubs = useMemo(
+    () => alcoholEnabled ? incSubs : incSubs.filter(s => s !== "Alcohol"),
+    [alcoholEnabled, incSubs]
+  );
+
   const handleSave = () => {
+    onSave({
+      number: program.number,
+      name,
+      alcoholEnabled,
+      giftCardEnabled,
+      excludedCategories: diff(CATEGORIES, incCats),
+      excludedSubcategories: diff(SUBCATEGORIES, effectiveIncSubs),
+      excludedBrands: diff(BRANDS, incBrands),
+      excludedSuppliers: diff(SUPPLIERS, incSuppliers),
+      includedGiftCards: giftCardEnabled ? incGiftCards : [...GIFT_CARDS],
+    });
     setDirty(false);
     setMsg({ type: "success", text: `Program ${program.number} configuration saved successfully.` });
     setTimeout(() => setMsg(null), 4000);
   };
-
-  // Alcohol category visibility. Alcohol is a subcategory; if disabled, force-exclude it.
-  const effectiveExSubs = useMemo(
-    () => alcoholEnabled ? exSubs : Array.from(new Set([...exSubs, "Alcohol"])),
-    [alcoholEnabled, exSubs]
-  );
 
   return (
     <div className="animate-fade-in">
@@ -336,7 +349,7 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
           <ArrowLeft size={15} /> Back to Programs
         </button>
         <h1 className="page-title">{program.name} – {program.number}</h1>
-        <p className="page-subtitle">Configure product visibility using exclusions; gift cards use inclusions</p>
+        <p className="page-subtitle">Select the records that should be available for this program</p>
       </div>
 
       {msg && (
@@ -376,12 +389,12 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
 
         <div className="border-t border-border pt-4">
           <h3 className="text-sm font-semibold text-foreground mb-1">Product Configuration</h3>
-          <p className="text-xs text-muted-foreground mb-4">Select only the records to exclude. Anything not listed is automatically available (including future master data).</p>
+          <p className="text-xs text-muted-foreground mb-4">All active master data is listed below. Every record is selected by default; uncheck any you want to exclude from this program.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ExclusionList title="Excluded Categories" options={CATEGORIES} selected={exCats} onChange={setExCats} />
-            <ExclusionList title="Excluded Subcategories" options={SUBCATEGORIES} selected={effectiveExSubs} onChange={setExSubs} lockedItems={alcoholEnabled ? [] : ["Alcohol"]} />
-            <ExclusionList title="Excluded Brands" options={BRANDS} selected={exBrands} onChange={setExBrands} />
-            <ExclusionList title="Excluded Suppliers" options={SUPPLIERS} selected={exSuppliers} onChange={setExSuppliers} />
+            <InclusionList title="Categories" options={CATEGORIES} selected={incCats} onChange={setIncCats} />
+            <InclusionList title="Subcategories" options={SUBCATEGORIES} selected={effectiveIncSubs} onChange={setIncSubs} lockedOffItems={alcoholEnabled ? [] : ["Alcohol"]} />
+            <InclusionList title="Brands" options={BRANDS} selected={incBrands} onChange={setIncBrands} />
+            <InclusionList title="Suppliers" options={SUPPLIERS} selected={incSuppliers} onChange={setIncSuppliers} />
           </div>
         </div>
 
@@ -398,6 +411,7 @@ const ProgramEditPage = ({ program, onBack, onOpenBulk }: { program: Program; on
         </button>
         <div className="flex gap-3">
           <button onClick={handleBack} className="px-6 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Cancel</button>
+
           <button onClick={handleSave} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">Save</button>
         </div>
       </div>
