@@ -34,30 +34,83 @@ type Program = {
   includedGiftCards: string[];
 };
 
-const samplePrograms: Program[] = [
+const initialPrograms: Program[] = [
   { number: "PG-001", name: "Rewards Plus", alcoholEnabled: false, giftCardEnabled: true, excludedCategories: ["Grocery"], excludedSubcategories: [], excludedBrands: [], excludedSuppliers: [], includedGiftCards: [...GIFT_CARDS] },
   { number: "PG-002", name: "Corporate Perks", alcoholEnabled: true, giftCardEnabled: false, excludedCategories: [], excludedSubcategories: ["Fast Food"], excludedBrands: ["BrandX"], excludedSuppliers: [], includedGiftCards: [] },
   { number: "PG-003", name: "Employee Benefits", alcoholEnabled: false, giftCardEnabled: false, excludedCategories: [], excludedSubcategories: [], excludedBrands: [], excludedSuppliers: ["Supplier A"], includedGiftCards: [] },
   { number: "PG-004", name: "Partner Network", alcoholEnabled: true, giftCardEnabled: true, excludedCategories: ["Beverages", "Goodies"], excludedSubcategories: [], excludedBrands: [], excludedSuppliers: [], includedGiftCards: ["Amazon eGift Card", "Starbucks eGift Card"] },
 ];
 
+/* Full list of active programs available in the system (union of configured + unconfigured). */
+const ALL_PROGRAMS: { number: string; name: string }[] = [
+  { number: "PG-001", name: "Rewards Plus" },
+  { number: "PG-002", name: "Corporate Perks" },
+  { number: "PG-003", name: "Employee Benefits" },
+  { number: "PG-004", name: "Partner Network" },
+  { number: "PG-005", name: "Executive Circle" },
+  { number: "PG-006", name: "Sales Incentive Club" },
+  { number: "PG-007", name: "Wellness Rewards" },
+  { number: "PG-008", name: "Milestone Recognition" },
+  { number: "PG-009", name: "Holiday Appreciation" },
+  { number: "PG-010", name: "Referral Bonus" },
+];
+
 const ProgramConfigPage = () => {
+  const [programs, setPrograms] = useState<Program[]>(initialPrograms);
   const [editing, setEditing] = useState<Program | null>(null);
   const [searchNumber, setSearchNumber] = useState("");
   const [searchName, setSearchName] = useState("");
-  const [filtered, setFiltered] = useState<Program[]>(samplePrograms);
   const [showBulk, setShowBulk] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [msg, setMsg] = useState<{ type: "success" | "warning"; text: string } | null>(null);
 
-  const handleSearch = () => {
-    setFiltered(samplePrograms.filter(p =>
-      (!searchNumber || p.number.toLowerCase().includes(searchNumber.toLowerCase())) &&
-      (!searchName || p.name.toLowerCase().includes(searchName.toLowerCase()))
-    ));
+  const filtered = useMemo(() => programs.filter(p =>
+    (!searchNumber || p.number.toLowerCase().includes(searchNumber.toLowerCase())) &&
+    (!searchName || p.name.toLowerCase().includes(searchName.toLowerCase()))
+  ), [programs, searchNumber, searchName]);
+
+  const handleSaveEdit = (updated: Program) => {
+    setPrograms(prev => prev.map(p => p.number === updated.number ? updated : p));
+  };
+
+  const handleAdd = (programNumber: string) => {
+    const meta = ALL_PROGRAMS.find(p => p.number === programNumber);
+    if (!meta) return;
+    if (programs.some(p => p.number === programNumber)) {
+      setMsg({ type: "warning", text: "A configuration already exists for the selected Program." });
+      setTimeout(() => setMsg(null), 4000);
+      return;
+    }
+    const created: Program = {
+      number: meta.number,
+      name: meta.name,
+      alcoholEnabled: false,
+      giftCardEnabled: false,
+      excludedCategories: [],
+      excludedSubcategories: [],
+      excludedBrands: [],
+      excludedSuppliers: [],
+      includedGiftCards: [...GIFT_CARDS],
+    };
+    setPrograms(prev => [created, ...prev]);
+    setShowAdd(false);
+    setMsg({ type: "success", text: `Configuration created for ${meta.number} – ${meta.name}.` });
+    setTimeout(() => setMsg(null), 4000);
   };
 
   if (editing) {
-    return <ProgramEditPage program={editing} onBack={() => setEditing(null)} onOpenBulk={() => setShowBulk(true)} />;
+    return (
+      <ProgramEditPage
+        program={editing}
+        onBack={() => setEditing(null)}
+        onOpenBulk={() => setShowBulk(true)}
+        onSave={handleSaveEdit}
+      />
+    );
   }
+
+  const configuredNumbers = new Set(programs.map(p => p.number));
+  const availableToAdd = ALL_PROGRAMS.filter(p => !configuredNumbers.has(p.number));
 
   return (
     <div className="animate-fade-in">
@@ -66,10 +119,22 @@ const ProgramConfigPage = () => {
           <h1 className="page-title">Program Configuration</h1>
           <p className="page-subtitle">Manage program-level product visibility and gift card availability</p>
         </div>
-        <button onClick={() => setShowBulk(true)} className="flex items-center gap-1.5 px-4 py-2 border border-input rounded-lg text-sm font-medium hover:bg-muted">
-          <Upload size={14} /> Bulk Upload Configuration
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setShowBulk(true)} className="flex items-center gap-1.5 px-4 py-2 border border-input rounded-lg text-sm font-medium hover:bg-muted">
+            <Upload size={14} /> Bulk Upload Configuration
+          </button>
+          <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">
+            <Plus size={14} /> Add Configuration
+          </button>
+        </div>
       </div>
+
+      {msg && (
+        <div className={`mb-4 admin-card flex items-start gap-2 border-l-4 ${msg.type === "success" ? "border-l-green-500" : "border-l-yellow-500"}`}>
+          {msg.type === "success" ? <CheckCircle2 className="text-green-600 shrink-0" size={18} /> : <AlertTriangle className="text-yellow-600 shrink-0" size={18} />}
+          <span className="text-sm">{msg.text}</span>
+        </div>
+      )}
 
       <div className="admin-card mb-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
@@ -82,10 +147,10 @@ const ProgramConfigPage = () => {
             <input className={inputCls} placeholder="Search by name..." value={searchName} onChange={e => setSearchName(e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSearch} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">
+            <button onClick={() => { /* filtering is live */ }} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">
               <Search size={14} /> Search
             </button>
-            <button onClick={() => { setSearchNumber(""); setSearchName(""); setFiltered(samplePrograms); }} className="px-4 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Reset</button>
+            <button onClick={() => { setSearchNumber(""); setSearchName(""); }} className="px-4 py-2 border border-input rounded-lg text-sm text-muted-foreground hover:bg-muted">Reset</button>
           </div>
         </div>
       </div>
@@ -116,11 +181,101 @@ const ProgramConfigPage = () => {
                 </tr>
               );
             })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="text-center text-xs text-muted-foreground py-6">No program configurations match your search.</td></tr>
+            )}
           </tbody>
         </table>
       </div>
 
       {showBulk && <BulkUploadModal onClose={() => setShowBulk(false)} />}
+      {showAdd && <AddConfigModal available={availableToAdd} onClose={() => setShowAdd(false)} onCreate={handleAdd} />}
+    </div>
+  );
+};
+
+/* ── Add configuration modal ── */
+
+const AddConfigModal = ({
+  available, onClose, onCreate,
+}: { available: { number: string; name: string }[]; onClose: () => void; onCreate: (n: string) => void }) => {
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<string>("");
+  const results = useMemo(
+    () => available.filter(p =>
+      p.number.toLowerCase().includes(q.toLowerCase()) || p.name.toLowerCase().includes(q.toLowerCase())
+    ),
+    [available, q]
+  );
+  const chosen = available.find(p => p.number === selected) || null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-foreground/40 flex items-center justify-center p-4">
+      <div className="bg-card rounded-lg shadow-lg w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <h2 className="text-base font-semibold">Add Program Configuration</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className={labelCls}>Select Program</label>
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-2.5 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={e => { setQ(e.target.value); setSelected(""); }}
+                placeholder="Search by number or name..."
+                className={`${inputCls} pl-8`}
+              />
+            </div>
+            <div className="mt-2 border border-border rounded-lg max-h-56 overflow-y-auto">
+              {results.length === 0 && (
+                <div className="text-xs text-muted-foreground px-3 py-6 text-center">
+                  {available.length === 0 ? "All active programs already have a configuration." : "No matching programs."}
+                </div>
+              )}
+              {results.map(p => (
+                <button
+                  key={p.number}
+                  type="button"
+                  onClick={() => setSelected(p.number)}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 flex items-center justify-between ${selected === p.number ? "bg-primary/10" : ""}`}
+                >
+                  <span className="font-medium">{p.number}</span>
+                  <span className="text-muted-foreground">{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {chosen && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Program Number</label>
+                <input className={`${inputCls} bg-muted`} value={chosen.number} readOnly />
+              </div>
+              <div>
+                <label className={labelCls}>Program Name</label>
+                <input className={`${inputCls} bg-muted`} value={chosen.name} readOnly />
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            The new configuration will start with Alcohol Products OFF, Gift Card Products OFF, and every Category, Subcategory, Brand, and Supplier included by default.
+          </p>
+        </div>
+        <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 border border-input rounded-lg text-sm hover:bg-muted">Cancel</button>
+          <button
+            disabled={!selected}
+            onClick={() => onCreate(selected)}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
